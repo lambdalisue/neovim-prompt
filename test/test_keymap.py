@@ -23,11 +23,8 @@ def test_Definition_parse(nvim):
     d = Definition.parse(nvim, [lhs, rhs, 'nowait'])
     assert d == Definition(lhs, rhs, nowait=True)
 
-    d = Definition.parse(nvim, [lhs, rhs, 'expr'])
-    assert d == Definition(lhs, rhs, expr=True)
-
-    d = Definition.parse(nvim, [lhs, rhs, 'noremap nowait expr'])
-    assert d == Definition(lhs, rhs, True, True, True)
+    d = Definition.parse(nvim, [lhs, rhs, 'noremap nowait'])
+    assert d == Definition(lhs, rhs, True, True)
 
     d = Definition.parse(nvim, ['<C-H>', '<BS>'])
     assert d == Definition(lhs, rhs)
@@ -47,6 +44,11 @@ def test_Definition_parse(nvim):
     with pytest.raises(AttributeError):
         Definition.parse(nvim, [lhs, rhs, 'unknown'])
 
+    d = Definition.parse(nvim, ['<C-H>', '1 + 1', 'expr'])
+    assert d == Definition(lhs, '1 + 1', expr=True)
+
+    with pytest.raises(AttributeError):
+        Definition.parse(nvim, [lhs, rhs, 'expr'])
 
 def test_Keymap_property():
     keymap = Keymap()
@@ -164,31 +166,26 @@ def test_keymap_resolve(nvim):
 
     # expr
     def mock_eval(expr):
-        # <BS>ab<Ins>
-        return '\udc80kbab\udc80kI'
+        result = eval(expr)
+        return result if isinstance(result, str) else str(result)
     nvim.eval = MagicMock()
     nvim.eval.side_effect = mock_eval
 
     keymap.register_from_rule(nvim, (
-        '<C-Y><C-L>', 'some#random#function()', 'expr',
+        '<C-Y><C-L>', '1 + 1', 'expr',
     ))
     assert keymap.resolve(nvim, Keystroke.parse(nvim, '<C-Y><C-L>')) == \
-        Keystroke.parse(nvim, '<BS>ab<Ins>')
+        Keystroke.parse(nvim, '2')
 
     # expr with remap/noremap
-    def mock_eval(expr):
-        return ''
-    nvim.eval = MagicMock()
-    nvim.eval.side_effect = mock_eval
-
     keymap.register_from_rule(nvim, (
-        '<C-Y><C-L>', 'some#random#function()', 'expr',
+        '<C-Y><C-L>', '""', 'expr',
     ))
     assert keymap.resolve(nvim, Keystroke.parse(nvim, '<C-Y><C-L>')) == \
         Keystroke.parse(nvim, '<B>')
 
     keymap.register_from_rule(nvim, (
-        '<C-Y><C-L>', 'some#random#function()', 'expr noremap',
+        '<C-Y><C-L>', '""', 'expr noremap',
     ))
     assert keymap.resolve(nvim, Keystroke.parse(nvim, '<C-Y><C-L>')) == \
         Keystroke.parse(nvim, '<C-X><C-B>')
