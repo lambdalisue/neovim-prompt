@@ -1,12 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 set -e
-if [[ -d 'prompt' ]]; then
+if [ -d 'prompt' ]; then
   rm -rf prompt
 fi
 
-if [[ -f '../prompt.py' ]]; then
+if [ -f '../prompt.py' ]; then
   mkdir prompt
-  for file in $(ls -1v ../*.py*); do
+  for file in $(ls -1v ../*.py); do
+    cp $file prompt/
+  done
+  for file in $(ls -1v ../*.pyi); do
     cp $file prompt/
   done
 else
