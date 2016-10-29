@@ -1,0 +1,7 @@
+docs/_build
+docs/prompt.rst
+docs/modules.rst
+prompt/
+.coverage
+.eggs
+.tox

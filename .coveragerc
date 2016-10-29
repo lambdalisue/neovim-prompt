@@ -1,0 +1,9 @@
+[report]
+include =
+    prompt/*.py
+    tests/*.py
+omit =
+    prompt/__init__.py
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:

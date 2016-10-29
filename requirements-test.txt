@@ -1,0 +1,10 @@
+neovim
+pytest>=3.0.3
+mypy-lang
+flake8
+coverage
+pytest-flake8
+pytest-cov
+enum34; python_version < '3.4'
+typing; python_version < '3.5'
+
