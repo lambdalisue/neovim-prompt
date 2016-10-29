@@ -45,8 +45,8 @@ def test_digraph_retrieve(nvim):
 
     # It immediately return a representation of a special key
     nvim.call.side_effect = [b'\x80kb', ord('a')]
-    assert digraph.retrieve(nvim) == '<Backspace>'
+    assert digraph.retrieve(nvim) == '<BS>'
     assert nvim.call() == ord('a')
 
     nvim.call.side_effect = [ord('a'), b'\x80kb']
-    assert digraph.retrieve(nvim) == '<Backspace>'
+    assert digraph.retrieve(nvim) == '<BS>'

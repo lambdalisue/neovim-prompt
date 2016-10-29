@@ -33,7 +33,7 @@ def test_int2char(nvim):
 def test_int2repr(nvim):
     assert util.int2repr(nvim, 97) == 'a'
     assert util.int2repr(nvim, 12354) == 'あ'
-    assert util.int2repr(nvim, b'\x80kb') == '<Backspace>'
+    assert util.int2repr(nvim, b'\x80kb') == '<BS>'
 
 
 def test_getchar(nvim):

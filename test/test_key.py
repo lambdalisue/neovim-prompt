@@ -173,8 +173,8 @@ def test_Key_parse_reify(nvim):
 
 def test_Key_represent(nvim):
     assert Key.represent(nvim, ord('a')) == 'a'
-    assert Key.represent(nvim, b'\x80kb') == '<Backspace>'
-    assert Key.represent(nvim, b'\x80KK') == '\udc80KK'
+    assert Key.represent(nvim, b'\x80kb') == '<BS>'
+    assert Key.represent(nvim, b'\x80KK') == '<K8>'
 
 
 def test_Key_immutability(nvim):
