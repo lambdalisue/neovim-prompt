@@ -7,7 +7,42 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from prompt.keystroke import Keystroke
-from prompt.keymap import Keymap
+from prompt.keymap import Keymap, Definition
+
+
+def test_Definition_parse(nvim):
+    lhs = Keystroke.parse(nvim, '<C-H>')
+    rhs = Keystroke.parse(nvim, '<BS>')
+
+    d = Definition.parse(nvim, [lhs, rhs])
+    assert d == Definition(lhs, rhs)
+
+    d = Definition.parse(nvim, [lhs, rhs, 'noremap'])
+    assert d == Definition(lhs, rhs, noremap=True)
+
+    d = Definition.parse(nvim, [lhs, rhs, 'nowait'])
+    assert d == Definition(lhs, rhs, nowait=True)
+
+    d = Definition.parse(nvim, [lhs, rhs, 'noremap nowait'])
+    assert d == Definition(lhs, rhs, True, True)
+
+    d = Definition.parse(nvim, ['<C-H>', '<BS>'])
+    assert d == Definition(lhs, rhs)
+
+    d = Definition.parse(nvim, ['<C-H>', '<BS>', 'noremap'])
+    assert d == Definition(lhs, rhs, noremap=True)
+
+    d = Definition.parse(nvim, ['<C-H>', '<BS>', 'nowait'])
+    assert d == Definition(lhs, rhs, nowait=True)
+
+    d = Definition.parse(nvim, ['<C-H>', '<BS>', 'noremap nowait'])
+    assert d == Definition(lhs, rhs, True, True)
+
+    with pytest.raises(AttributeError):
+        Definition.parse(nvim, [lhs, rhs, '', ''])
+
+    with pytest.raises(AttributeError):
+        Definition.parse(nvim, [lhs, rhs, 'unknown'])
 
 
 def test_Keymap_property():
@@ -18,14 +53,14 @@ def test_keymap_register(nvim):
     lhs = Keystroke.parse(nvim, '<C-H>')
     rhs = Keystroke.parse(nvim, '<BS>')
     keymap = Keymap()
-    keymap.register(lhs, rhs)
-    assert keymap.registry[lhs] == (lhs, rhs, False, False)
+    keymap.register(Definition(lhs, rhs))
+    assert keymap.registry[lhs] == Definition(lhs, rhs)
 
-    keymap.register(lhs, rhs, True)
-    assert keymap.registry[lhs] == (lhs, rhs, True, False)
+    keymap.register(Definition(lhs, rhs, True))
+    assert keymap.registry[lhs] == Definition(lhs, rhs, True)
 
-    keymap.register(lhs, rhs, True, True)
-    assert keymap.registry[lhs] == (lhs, rhs, True, True)
+    keymap.register(Definition(lhs, rhs, True, True))
+    assert keymap.registry[lhs] == Definition(lhs, rhs, True, True)
 
 
 def test_keymap_register_from_rule(nvim):
@@ -33,13 +68,13 @@ def test_keymap_register_from_rule(nvim):
     rhs = Keystroke.parse(nvim, '<BS>')
     keymap = Keymap()
     keymap.register_from_rule(nvim, ('<C-H>', '<BS>'))
-    assert keymap.registry[lhs] == (lhs, rhs, False, False)
+    assert keymap.registry[lhs] == Definition(lhs, rhs, False, False)
 
-    keymap.register_from_rule(nvim, ('<C-H>', '<BS>', True))
-    assert keymap.registry[lhs] == (lhs, rhs, True, False)
+    keymap.register_from_rule(nvim, ('<C-H>', '<BS>', 'noremap'))
+    assert keymap.registry[lhs] == Definition(lhs, rhs, True, False)
 
-    keymap.register_from_rule(nvim, ('<C-H>', '<BS>', True, True))
-    assert keymap.registry[lhs] == (lhs, rhs, True, True)
+    keymap.register_from_rule(nvim, ('<C-H>', '<BS>', 'noremap nowait'))
+    assert keymap.registry[lhs] == Definition(lhs, rhs, True, True)
 
 
 def test_keymap_register_from_rules(nvim):
@@ -53,22 +88,22 @@ def test_keymap_register_from_rules(nvim):
     keymap = Keymap()
     keymap.register_from_rules(nvim, [
         ('<C-H>', '<BS>'),
-        ('<C-D>', '<DEL>', True),
-        ('<C-M>', '<CR>', True, True),
+        ('<C-D>', '<DEL>', 'noremap'),
+        ('<C-M>', '<CR>', 'noremap nowait'),
     ])
-    assert keymap.registry[lhs1] == (lhs1, rhs1, False, False)
-    assert keymap.registry[lhs2] == (lhs2, rhs2, True, False)
-    assert keymap.registry[lhs3] == (lhs3, rhs3, True, True)
+    assert keymap.registry[lhs1] == Definition(lhs1, rhs1, False, False)
+    assert keymap.registry[lhs2] == Definition(lhs2, rhs2, True, False)
+    assert keymap.registry[lhs3] == Definition(lhs3, rhs3, True, True)
 
     # It can overwrite
     keymap.register_from_rules(nvim, [
-        ('<C-H>', '<BS>', True, True),
-        ('<C-D>', '<DEL>', False, True),
-        ('<C-M>', '<CR>', False, False),
+        ('<C-H>', '<BS>', 'noremap nowait'),
+        ('<C-D>', '<DEL>', 'nowait'),
+        ('<C-M>', '<CR>'),
     ])
-    assert keymap.registry[lhs1] == (lhs1, rhs1, True, True)
-    assert keymap.registry[lhs2] == (lhs2, rhs2, False, True)
-    assert keymap.registry[lhs3] == (lhs3, rhs3, False, False)
+    assert keymap.registry[lhs1] == Definition(lhs1, rhs1, True, True)
+    assert keymap.registry[lhs2] == Definition(lhs2, rhs2, False, True)
+    assert keymap.registry[lhs3] == Definition(lhs3, rhs3, False, False)
 
 
 def test_keymap_filter(nvim):
@@ -81,18 +116,18 @@ def test_keymap_filter(nvim):
     keymap.register_from_rule(nvim, ('<C-A>', '<C>'))
 
     assert keymap.filter(Keystroke.parse(nvim, '')) == sorted((
-        (lhs3, Keystroke.parse(nvim, '<C>'), False, False),
-        (lhs1, Keystroke.parse(nvim, '<A>'), False, False),
-        (lhs2, Keystroke.parse(nvim, '<B>'), False, False),
+        Definition(lhs3, Keystroke.parse(nvim, '<C>'), False, False),
+        Definition(lhs1, Keystroke.parse(nvim, '<A>'), False, False),
+        Definition(lhs2, Keystroke.parse(nvim, '<B>'), False, False),
     ))
 
     assert keymap.filter(Keystroke.parse(nvim, '<C-X>')) == sorted((
-        (lhs1, Keystroke.parse(nvim, '<A>'), False, False),
-        (lhs2, Keystroke.parse(nvim, '<B>'), False, False),
+        Definition(lhs1, Keystroke.parse(nvim, '<A>'), False, False),
+        Definition(lhs2, Keystroke.parse(nvim, '<B>'), False, False),
     ))
 
     assert keymap.filter(Keystroke.parse(nvim, '<C-X><C-F>')) == sorted((
-        (lhs1, Keystroke.parse(nvim, '<A>'), False, False),
+        Definition(lhs1, Keystroke.parse(nvim, '<A>'), False, False),
     ))
 
 
@@ -117,7 +152,7 @@ def test_keymap_resolve(nvim):
     assert keymap.resolve(Keystroke.parse(nvim, '<C-X><C-B>')) == \
         Keystroke.parse(nvim, '<D>')
     # noremap
-    keymap.register_from_rule(nvim, ('<C-X><C-B>', '<B>', True))
+    keymap.register_from_rule(nvim, ('<C-X><C-B>', '<B>', 'noremap'))
     assert keymap.resolve(Keystroke.parse(nvim, '<C-X><C-B>')) == \
         Keystroke.parse(nvim, '<B>')
 
@@ -137,8 +172,8 @@ def test_keymap_harvest_timeout(nvim):
     with patch('prompt.keymap.datetime') as m1:
         keymap = Keymap()
         keymap.register_from_rules(nvim, [
-            ('<C-H>', '<prompt:CH>', True),
-            ('<C-H><C-H>', '<prompt:CHCH>', True),
+            ('<C-H>', '<prompt:CH>', 'noremap'),
+            ('<C-H><C-H>', '<prompt:CHCH>', 'noremap'),
         ])
 
         # Keypress within timeoutlen
@@ -188,8 +223,8 @@ def test_keymap_harvest_timeout(nvim):
 
         # Keypress within timeoutlen but with nowait
         keymap.register_from_rules(nvim, [
-            ('<C-H>', '<prompt:CH>', True, True),
-            ('<C-H><C-H>', '<prompt:CHCH>', True),
+            ('<C-H>', '<prompt:CH>', 'noremap nowait'),
+            ('<C-H><C-H>', '<prompt:CHCH>', 'noremap'),
         ])
         def side_effect(*args):
             yield ord('\x08')   # ^H
@@ -219,8 +254,8 @@ def test_keymap_harvest_notimeout(nvim):
     with patch('prompt.keymap.datetime') as m1:
         keymap = Keymap()
         keymap.register_from_rules(nvim, [
-            ('<C-H>', '<prompt:CH>', True),
-            ('<C-H><C-H>', '<prompt:CHCH>', True),
+            ('<C-H>', '<prompt:CH>', 'noremap'),
+            ('<C-H><C-H>', '<prompt:CHCH>', 'noremap'),
         ])
 
         # Keypress after timeoutlen
@@ -241,8 +276,8 @@ def test_keymap_harvest_notimeout(nvim):
 
         # Keypress within timeoutlen but with nowait
         keymap.register_from_rules(nvim, [
-            ('<C-H>', '<prompt:CH>', True, True),
-            ('<C-H><C-H>', '<prompt:CHCH>', True),
+            ('<C-H>', '<prompt:CH>', 'noremap nowait'),
+            ('<C-H><C-H>', '<prompt:CHCH>', 'noremap'),
         ])
         def side_effect(*args):
             yield ord('\x08')   # ^H
@@ -270,9 +305,9 @@ def test_Keymap_from_rules(nvim):
 
     keymap = Keymap.from_rules(nvim, [
         ('<C-H>', '<BS>'),
-        ('<C-D>', '<DEL>', True),
-        ('<C-M>', '<CR>', True, True),
+        ('<C-D>', '<DEL>', 'noremap'),
+        ('<C-M>', '<CR>', 'noremap nowait'),
     ])
-    assert keymap.registry[lhs1] == (lhs1, rhs1, False, False)
-    assert keymap.registry[lhs2] == (lhs2, rhs2, True, False)
-    assert keymap.registry[lhs3] == (lhs3, rhs3, True, True)
+    assert keymap.registry[lhs1] == Definition(lhs1, rhs1, False, False)
+    assert keymap.registry[lhs2] == Definition(lhs2, rhs2, True, False)
+    assert keymap.registry[lhs3] == Definition(lhs3, rhs3, True, True)
