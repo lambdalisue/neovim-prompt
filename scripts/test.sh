@@ -1,15 +1,20 @@
 #!/bin/sh
 set -e
-if [ -d 'prompt' ]; then
+cd $(dirname $(cd $(dirname $0); pwd))
+pwd
+
+if [ -d "prompt" ]; then
   rm -rf prompt
 fi
 
-if [ -f '../prompt.py' ]; then
+ROOT=$(dirname $(pwd))
+
+if [ -e "$ROOT/prompt.py" ]; then
   mkdir prompt
-  for file in $(ls -1v ../*.py); do
+  for file in $(ls -1v $ROOT/*.py); do
     cp $file prompt/
   done
-  for file in $(ls -1v ../*.pyi); do
+  for file in $(ls -1v $ROOT/*.pyi); do
     cp $file prompt/
   done
 else
