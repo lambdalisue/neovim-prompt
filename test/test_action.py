@@ -166,6 +166,40 @@ def test_move_caret_to_left(prompt, action):
     assert prompt.caret.locus == 0
 
 
+def test_move_caret_to_one_word_left(prompt, action):
+
+    def mock_call(fname, expr, pat, sub, flags):
+        import re
+        return re.sub('\w+\s?$', sub, expr)
+
+    prompt.nvim.call = MagicMock()
+    prompt.nvim.call.side_effect = mock_call
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_left') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 0
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 9
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_left') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 6
+
+    prompt.text = 'Hello Goodbye    '
+    prompt.caret.locus = 16
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_left') is None
+    assert prompt.text == 'Hello Goodbye    '
+    assert prompt.caret.locus == 15
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_left') is None
+    assert prompt.text == 'Hello Goodbye    '
+    assert prompt.caret.locus == 14
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_left') is None
+    assert prompt.text == 'Hello Goodbye    '
+    assert prompt.caret.locus == 6
+
+
 def test_move_caret_to_right(prompt, action):
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
@@ -183,6 +217,40 @@ def test_move_caret_to_right(prompt, action):
     assert prompt.caret.locus == 13
     assert action.call(prompt, 'prompt:move_caret_to_right') is None
     assert prompt.caret.locus == 13
+
+
+def test_move_caret_to_one_word_right(prompt, action):
+
+    def mock_call(fname, expr, pat, sub, flags):
+        import re
+        return re.sub('^\w+', sub, expr)
+
+    prompt.nvim.call = MagicMock()
+    prompt.nvim.call.side_effect = mock_call
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 13
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 2
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 5
+
+    prompt.text = 'Hello   Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
+    assert prompt.text == 'Hello   Goodbye'
+    assert prompt.caret.locus == 6
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
+    assert prompt.text == 'Hello   Goodbye'
+    assert prompt.caret.locus == 7
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
+    assert prompt.text == 'Hello   Goodbye'
+    assert prompt.caret.locus == 15
 
 
 def test_move_caret_to_head(prompt, action):
