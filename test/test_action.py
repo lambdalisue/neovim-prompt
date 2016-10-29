@@ -95,6 +95,37 @@ def test_delete_char_before_caret(prompt, action):
     assert prompt.caret.locus == 0
 
 
+def test_delete_word_before_caret(prompt, action):
+
+    def mock_call(fname, expr, pat, sub, flags):
+        import re
+        return re.sub('\w+\s*$', sub, expr)
+
+    prompt.nvim.call = MagicMock()
+    prompt.nvim.call.side_effect = mock_call
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == ' Goodbye'
+    assert prompt.caret.locus == 0
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 10
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'Hello bye'
+    assert prompt.caret.locus == 6
+
+    prompt.text = 'Hello Goodbye    '
+    prompt.caret.locus = 16
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'Hello  '
+    assert prompt.caret.locus == 6
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == ' '
+    assert prompt.caret.locus == 0
+
+
 def test_delete_char_under_caret(prompt, action):
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
