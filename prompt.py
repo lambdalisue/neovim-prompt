@@ -2,29 +2,9 @@
 import re
 import copy
 from datetime import timedelta
+from .util import build_echon_expr, ESCAPE_ECHO
 
 ACTION_KEYSTROKE_PATTERN = re.compile(r'<(\w+:\w+)>')
-
-ESCAPE_ECHO = str.maketrans({
-    '"': '\\"',
-    '\\': '\\\\',
-})
-
-IMPRINTABLE_REPRESENTS = {
-    '\a': '^G',
-    '\b': '^H',             # NOTE: Neovim: <BS>, Vim: ^H. Follow Vim.
-    '\t': '^I',
-    '\n': '^J',
-    '\v': '^K',
-    '\f': '^L',
-    '\r': '^M',
-    '\udc80\udcffX': '^@',  # NOTE: ^0 representation in Vim.
-}
-
-IMPRINTABLE_PATTERN = re.compile(r'(%s)' % '|'.join(
-    IMPRINTABLE_REPRESENTS.keys()
-))
-
 
 STATUS_PROGRESS = 0
 STATUS_ACCEPT = 1
@@ -205,10 +185,10 @@ class Prompt:
         forward_text = self.caret.get_forward_text()
         self.nvim.command('|'.join([
             'redraw',
-            _build_echon_expr('Question', self.prefix),
-            _build_echon_expr('None', backward_text),
-            _build_echon_expr('IncSearch', selected_text),
-            _build_echon_expr('None', forward_text),
+            build_echon_expr(self.prefix, 'Question'),
+            build_echon_expr(backward_text, 'None'),
+            build_echon_expr(selected_text, 'IncSearch'),
+            build_echon_expr(forward_text, 'None'),
         ]))
 
     def start(self, default=None):
@@ -238,7 +218,7 @@ class Prompt:
                 status = self.on_update(status) or STATUS_PROGRESS
         except KeyboardInterrupt:
             status = STATUS_CANCEL
-        except self.nvim.error as e:
+        except Exception as e:
             self.nvim.command('|'.join([
                 'echoerr "%s"' % line.translate(ESCAPE_ECHO)
                 for line in str(e).splitlines()
@@ -334,16 +314,3 @@ class Prompt:
         """
         self.nvim.call('inputrestore')
         return status
-
-
-def _build_echon_expr(hl, text):
-    if not IMPRINTABLE_PATTERN.search(text):
-        return 'echohl %s|echon "%s"' % (
-            hl, text.translate(ESCAPE_ECHO)
-        )
-    p = 'echohl %s|echon "%%s"' % hl
-    i = 'echohl %s|echon "%%s"' % ('SpecialKey' if hl == 'None' else hl)
-    return '|'.join(
-        p % term if index % 2 == 0 else i % IMPRINTABLE_REPRESENTS[term]
-        for index, term in enumerate(IMPRINTABLE_PATTERN.split(text))
-    )
