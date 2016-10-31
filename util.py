@@ -131,14 +131,6 @@ def getchar(nvim, *args):
         raise e
 
 
-def safeget(l, index, default=None):
-    """Return an index item of list or default."""
-    try:
-        return l[index]
-    except IndexError:
-        return default
-
-
 # http://python-3-patterns-idioms-test.readthedocs.io/en/latest/Metaprogramming.html
 class Singleton(type):
     """A singleton metaclass."""
