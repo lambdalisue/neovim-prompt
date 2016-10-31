@@ -298,7 +298,7 @@ class Keymap:
             return rhs
         return self.resolve(nvim, rhs, nowait=True)
 
-    def harvest(self, nvim, timeoutlen):
+    def harvest(self, nvim, timeoutlen, callback=None):
         """Harvest a keystroke from getchar in Vim and return resolved.
 
         It reads 'timeout' and 'timeoutlen' options in Vim and harvest a
@@ -369,11 +369,13 @@ class Keymap:
         return keymap
 
 
-def _getcode(nvim, timeout):
+def _getcode(nvim, timeout, callback=None):
     while not timeout or timeout > datetime.now():
         code = getchar(nvim, False)
         if code != 0:
             return code
+        if callback:
+            callback()
         time.sleep(0.01)
     return None
 

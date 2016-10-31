@@ -1,5 +1,8 @@
 from datetime import datetime
-from typing import Iterator, Optional, Sequence, Tuple, Union, NamedTuple
+from typing import (
+    Iterator, Optional, Sequence, Tuple, Union, NamedTuple,
+    Callable,
+)
 from neovim import Nvim
 from .key import KeyCode
 from .keystroke import Keystroke, KeystrokeExpr
@@ -43,11 +46,13 @@ class Keymap:
                 nowait: bool=False) -> Optional[Keystroke]: ...
 
     def harvest(self, nvim: Nvim,
-                timeoutlen: Optional[int]=None) -> Keystroke: ...
+                timeoutlen: Optional[int]=None,
+                callback: Optional[Callable]) -> Keystroke: ...
 
     @classmethod
     def from_rules(cls, nvim: Nvim, rules: Sequence[Rule]) -> Keymap: ...
 
 
 def _getcode(nvim: Nvim,
-             timeout: Optional[datetime]) -> Optional[KeyCode]: ...
+             timeout: Optional[datetime],
+             callback: Optional[Callback]) -> Optional[KeyCode]: ...
