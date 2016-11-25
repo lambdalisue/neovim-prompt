@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.fixture
-def prompt(nvim, context):
+def prompt(nvim):
     history_candidates = (
         'foo',
         'bar',
@@ -29,7 +29,7 @@ def prompt(nvim, context):
             return histget(*args)
 
     Prompt = MagicMock(spec='prompt.prompt.Prompt')
-    prompt = Prompt(nvim, context)
+    prompt = Prompt(nvim)
 
     prompt.nvim.call = MagicMock()
     prompt.nvim.call.side_effect = call

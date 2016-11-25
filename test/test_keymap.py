@@ -1,4 +1,3 @@
-from curses import ascii
 from collections import abc
 
 from datetime import datetime, timedelta
@@ -361,7 +360,10 @@ def test_keymap_harvest_with_callback(nvim):
             nvim.call()
 
         # Callback should be called
-        callback.assert_called_once_with()
+        callback.assert_called_with()
+        # Callback should be called every before getchar return value thus
+        # the number of call should be 3 (see side_effect implementation.)
+        assert callback.call_count == 3
 
 
 def test_Keymap_from_rules(nvim):

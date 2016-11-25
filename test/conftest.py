@@ -17,12 +17,6 @@ def nvim():
 
 
 @pytest.fixture
-def context():
-    from prompt.context import Context
-    return Context()
-
-
-@pytest.fixture
-def prompt(nvim, context):
+def prompt(nvim):
     from prompt.prompt import Prompt
-    return Prompt(nvim, context)
+    return Prompt(nvim)

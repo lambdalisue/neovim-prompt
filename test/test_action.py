@@ -44,6 +44,7 @@ def test_action_call(prompt):
     with pytest.raises(AttributeError):
         action.call(prompt, 'prompt:not_a_registered_action')
 
+
 def test_action_call_with_params(prompt):
     prompt.text = 'foo'
     callback = lambda prompt, params: prompt.text + params
@@ -52,6 +53,7 @@ def test_action_call_with_params(prompt):
     assert action.call(prompt, 'prompt:test') == 'foo'
     assert action.call(prompt, 'prompt:test:foo') == 'foofoo'
     assert action.call(prompt, 'prompt:test:foo:foo') == 'foofoo:foo'
+
 
 def test_Action_from_rules():
     callback = lambda prompt, params: None

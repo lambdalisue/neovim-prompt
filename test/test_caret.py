@@ -1,17 +1,19 @@
 import pytest
+from unittest.mock import MagicMock
 
 from prompt.caret import Caret
-from prompt.context import Context
 
 
-def test_locus(context):
-    context.text = '  Hello world!'
-    context.caret_locus = 0
-    caret = Caret(context)
-    assert caret.locus == context.caret_locus
+@pytest.fixture
+def prompt():
+    prompt = MagicMock()
+    prompt.text = ''
+    return prompt
 
-    caret.locus -= 1
-    assert caret.locus == context.caret_locus
+
+def test_locus(prompt):
+    prompt.text = '  Hello world!'
+    caret = Caret(prompt)
 
     # lower limit
     caret.locus = -1
@@ -19,35 +21,31 @@ def test_locus(context):
 
     # upper limit
     caret.locus = 100
-    assert caret.locus == len(context.text)
+    assert caret.locus == len(prompt.text)
 
 
-def test_head(context):
-    context.text = '  Hello world!'
-    context.caret_locus = 0
-    caret = Caret(context)
+def test_head(prompt):
+    prompt.text = '  Hello world!'
+    caret = Caret(prompt)
     assert caret.head == 0
 
 
-def test_lead(context):
-    context.text = '  Hello world!'
-    context.caret_locus = 0
-    caret = Caret(context)
+def test_lead(prompt):
+    prompt.text = '  Hello world!'
+    caret = Caret(prompt)
     # The number of leading spaces
     assert caret.lead == 2
 
 
-def test_tail(context):
-    context.text = '  Hello world!'
-    context.caret_locus = 0
-    caret = Caret(context)
-    assert caret.tail == len(context.text)
+def test_tail(prompt):
+    prompt.text = '  Hello world!'
+    caret = Caret(prompt)
+    assert caret.tail == len(prompt.text)
 
 
-def test_get_backward_text(context):
-    context.text = '  Hello world!'
-    context.caret_locus = 0
-    caret = Caret(context)
+def test_get_backward_text(prompt):
+    prompt.text = '  Hello world!'
+    caret = Caret(prompt)
     caret.locus = caret.tail
     assert caret.get_backward_text() == '  Hello world!'
 
@@ -61,10 +59,9 @@ def test_get_backward_text(context):
     assert caret.get_backward_text() == '  Hello'
 
 
-def test_get_selected_text(context):
-    context.text = '  Hello world!'
-    context.caret_locus = 0
-    caret = Caret(context)
+def test_get_selected_text(prompt):
+    prompt.text = '  Hello world!'
+    caret = Caret(prompt)
     caret.locus = caret.tail
     assert caret.get_selected_text() == ''
 
@@ -78,10 +75,9 @@ def test_get_selected_text(context):
     assert caret.get_selected_text() == 'w'
 
 
-def test_get_forward_text(context):
-    context.text = '  Hello world!'
-    context.caret_locus = 0
-    caret = Caret(context)
+def test_get_forward_text(prompt):
+    prompt.text = '  Hello world!'
+    caret = Caret(prompt)
     caret.locus = caret.tail
     assert caret.get_forward_text() == ''
 

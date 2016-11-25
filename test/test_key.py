@@ -1,4 +1,3 @@
-from curses import ascii
 from collections import abc
 
 from datetime import datetime, timedelta
@@ -41,7 +40,7 @@ def test_Key_parse_with_bytes(nvim):
 
 def test_Key_parse_with_bytes_special_key_constant_int(nvim):
     expr = b'<CR>'
-    assert Key.parse(nvim, expr).code == ascii.CR
+    assert Key.parse(nvim, expr).code == 0x0D
     assert Key.parse(nvim, expr).char == '\r'
 
     expr = b'<BSLASH>'

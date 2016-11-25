@@ -7,32 +7,8 @@ from prompt.prompt import (
 )
 
 
-def test_Prompt_constructor(nvim, context):
-    prompt = Prompt(nvim, context)
-
-
-def test_prompt_text(prompt):
-    assert prompt.text == ''
-    assert prompt.caret.locus == 0
-    prompt.text = 'foo'
-    assert prompt.text == 'foo'
-    assert prompt.caret.locus == 3
-
-
-def test_prompt_apply_custom_mappings_from_vim_variable(prompt):
-    nvim = prompt.nvim
-    nvim.vars = {
-        'prompt#custom_mappings': [
-            ('<C-D>', '<DEL>'),
-        ]
-    }
-
-    # Fail silently
-    prompt.apply_custom_mappings_from_vim_variable('does_not_exist')
-    assert Keystroke.parse(nvim, '<C-D>') not in prompt.keymap.registry
-
-    prompt.apply_custom_mappings_from_vim_variable('prompt#custom_mappings')
-    assert Keystroke.parse(nvim, '<C-D>') in prompt.keymap.registry
+def test_Prompt_constructor(nvim):
+    prompt = Prompt(nvim)
 
 
 def test_insert_text(prompt):
@@ -141,16 +117,6 @@ def test_start(prompt):
         Keystroke.parse(nvim, 'c'),
         Keystroke.parse(nvim, '<prompt:accept>'),
     ]
-    assert prompt.start('default') == STATUS_ACCEPT
-    assert prompt.text == 'defaultabc'
-
-    prompt.keymap.harvest.side_effect = [
-        Keystroke.parse(nvim, 'a'),
-        Keystroke.parse(nvim, 'b'),
-        Keystroke.parse(nvim, 'c'),
-        Keystroke.parse(nvim, '<prompt:cancel>'),
-    ]
-    assert prompt.start() is STATUS_CANCEL
 
 
 def test_start_exception(prompt):
@@ -174,18 +140,14 @@ def test_start_exception(prompt):
 def test_on_init(prompt):
     prompt.nvim.call = MagicMock()
     prompt.text = 'Hello Goodbye'
-    assert prompt.on_init(None) == None
+    assert prompt.on_init() == None
     prompt.nvim.call.assert_called_with('inputsave')
     assert prompt.text == 'Hello Goodbye'
 
-    assert prompt.on_init('default') == None
-    prompt.nvim.call.assert_called_with('inputsave')
-    assert prompt.text == 'default'
-
 
 def test_on_update(prompt):
-    assert prompt.on_update(STATUS_ACCEPT) == STATUS_ACCEPT
-    assert prompt.on_update(STATUS_CANCEL) == STATUS_CANCEL
+    assert prompt.on_update(STATUS_ACCEPT) is None
+    assert prompt.on_update(STATUS_CANCEL) is None
 
 
 def test_on_redraw(prompt):

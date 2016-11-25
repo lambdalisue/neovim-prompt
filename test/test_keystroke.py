@@ -1,4 +1,3 @@
-from curses import ascii
 from collections import abc
 from contextlib import ExitStack
 
