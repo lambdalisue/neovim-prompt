@@ -1,8 +1,8 @@
 """Keymap."""
 import time
 from collections import namedtuple
-from operator import itemgetter
 from datetime import datetime
+from operator import itemgetter
 from .key import Key
 from .keystroke import Keystroke
 from .util import getchar
@@ -23,6 +23,7 @@ class Definition(DefinitionBase):
     __slots__ = ()
 
     def __new__(cls, lhs, rhs, noremap=False, nowait=False, expr=False):
+        """Create a new instance of the definition."""
         if expr and not isinstance(rhs, str):
             raise AttributeError(
                 '"rhs" of "expr" mapping requires to be a str.'
@@ -322,7 +323,8 @@ class Keymap:
         while True:
             code = _getcode(
                 nvim,
-                datetime.now() + timeoutlen if timeoutlen else None
+                datetime.now() + timeoutlen if timeoutlen else None,
+                callback=callback,
             )
             if code is None and previous is None:
                 # timeout without input

@@ -1,8 +1,8 @@
 """Prompt module."""
-import re
 import copy
+import re
 from datetime import timedelta
-from .util import build_echon_expr, ESCAPE_ECHO
+from .util import ESCAPE_ECHO, build_echon_expr
 
 ACTION_KEYSTROKE_PATTERN = re.compile(r'<(\w+:\w+)>')
 
@@ -176,6 +176,7 @@ class Prompt:
             self.replace_text(text)
 
     def redraw_prompt(self):
+        """Redraw prompt."""
         # NOTE:
         # There is a highlight name 'Cursor' but some sometime the visibility
         # is quite low (e.g. tender) so use 'IncSearch' instead while the
@@ -281,8 +282,7 @@ class Prompt:
         It is used to handle a pressed keystroke. Note that subclass should NOT
         override this method to perform actions. Register a new custom action
         instead. In default, it call action and return the result if the
-        keystroke is <xxx:xxx>or call Vim function XXX and return the result
-        if the keystroke is <call:XXX>.
+        keystroke is <xxx:xxx>.
 
         Args:
             keystroke (Keystroke): A pressed keystroke instance. Note that this

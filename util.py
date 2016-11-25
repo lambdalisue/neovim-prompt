@@ -120,6 +120,7 @@ def int2char(nvim, code):
 
 
 def int2repr(nvim, code):
+    """Return a string representation of a key with specified key code."""
     from .key import Key
     if isinstance(code, int):
         return int2char(nvim, code)
@@ -183,7 +184,7 @@ class Singleton(type):
 
     instance = None
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args, **kwargs):  # noqa
         if not cls.instance:
             cls.instance = super().__call__(*args, **kwargs)
         return cls.instance

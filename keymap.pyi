@@ -46,7 +46,7 @@ class Keymap:
                 nowait: bool=False) -> Optional[Keystroke]: ...
 
     def harvest(self, nvim: Nvim,
-                timeoutlen: Optional[int]=None,
+                timeoutlen: Optional[int],
                 callback: Optional[Callable]) -> Keystroke: ...
 
     @classmethod
@@ -55,4 +55,4 @@ class Keymap:
 
 def _getcode(nvim: Nvim,
              timeout: Optional[datetime],
-             callback: Optional[Callback]) -> Optional[KeyCode]: ...
+             callback: Optional[Callable]) -> Optional[KeyCode]: ...

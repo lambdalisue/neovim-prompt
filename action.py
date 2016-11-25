@@ -1,7 +1,12 @@
 """Action module."""
 import re
 from .digraph import Digraph
-from .util import int2char, int2repr, getchar
+from .util import getchar, int2char, int2repr
+
+
+ACTION_PATTERN = re.compile(
+    r'(?P<namespace>\w+):(?P<name>\w+)(?::(?P<params>\w+))*'
+)
 
 
 class Action:
@@ -16,6 +21,10 @@ class Action:
     def __init__(self):
         """Constructor."""
         self.registry = {}
+
+    def clear(self):
+        """Clear registered actions."""
+        self.registry.clear()
 
     def register(self, name, callback):
         """Register action callback to a specified name.

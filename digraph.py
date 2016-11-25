@@ -13,6 +13,7 @@ class Digraph(metaclass=Singleton):
     __slots__ = ('registry',)
 
     def __init__(self):
+        """Constructor."""
         self.registry = None
 
     def find(self, nvim, char1, char2):
