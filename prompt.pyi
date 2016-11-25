@@ -1,6 +1,6 @@
 import enum
 from datetime import timedelta
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, NamedTuple
 from neovim import Nvim
 from .key import Key
 from .keystroke import Keystroke
@@ -26,21 +26,24 @@ class InsertMode(enum.Enum):
     replace = 2
 
 
+Condition = NamedTuple('Condition', [
+    ('text', str),
+    ('caret_locus', int),
+])
+
+
 class Prompt:
     """Prompt class."""
 
     prefix = ...  # type: str
 
-    def __init__(self, nvim: Nvim, context: Context) -> None: ...
+    def __init__(self, nvim: Nvim) -> None: ...
 
     @property
     def text(self) -> str: ...
 
     @text.setter
     def text(self, value: str) -> None: ...
-
-    def apply_custom_mappings_from_vim_variable(self,
-                                                varname: str) -> None: ...
 
     def insert_text(self, text: str) -> None: ...
 
@@ -50,9 +53,9 @@ class Prompt:
 
     def redraw_prompt(self) -> None: ...
 
-    def start(self, default: str=None) -> Status: ...
+    def start(self) -> Status: ...
 
-    def on_init(self, default: Optional[str]) -> Optional[Status]: ...
+    def on_init(self) -> Optional[Status]: ...
 
     def on_update(self, status: Optional[Status]) -> Status: ...
 
@@ -61,6 +64,10 @@ class Prompt:
     def on_keypress(self, keystroke: Keystroke) -> Optional[Status]: ...
 
     def on_term(self, status: Status) -> Status: ...
+
+    def store(self) -> Condition: ...
+
+    def restore(self, condition: Condition) -> None: ...
 
 
 def _build_echon_expr(hl: str, text: str) -> str: ...

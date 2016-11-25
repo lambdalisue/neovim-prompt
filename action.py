@@ -5,7 +5,7 @@ from .util import getchar, int2char, int2repr
 
 
 ACTION_PATTERN = re.compile(
-    r'^(?P<name>(?:\w+):(?P<label>\w+))(?::(?P<params>.+))?$'
+    r'(?P<name>(?:\w+):(?P<label>\w+))(?::(?P<params>.+))?'
 )
 
 
@@ -156,7 +156,7 @@ def _toggle_insert_mode(prompt, params):
 def _delete_char_before_caret(prompt, params):
     if prompt.caret.locus == 0:
         return
-    prompt.context.text = ''.join([
+    prompt.text = ''.join([
         prompt.caret.get_backward_text()[:-1],
         prompt.caret.get_selected_text(),
         prompt.caret.get_forward_text(),
@@ -173,7 +173,7 @@ def _delete_word_before_caret(prompt, params):
         'substitute',
         original_backward_text, '\k\+\s*$', '', '',
     )
-    prompt.context.text = ''.join([
+    prompt.text = ''.join([
         backward_text,
         prompt.caret.get_selected_text(),
         prompt.caret.get_forward_text(),
@@ -182,20 +182,20 @@ def _delete_word_before_caret(prompt, params):
 
 
 def _delete_char_under_caret(prompt, params):
-    prompt.context.text = ''.join([
+    prompt.text = ''.join([
         prompt.caret.get_backward_text(),
         prompt.caret.get_forward_text(),
     ])
 
 
 def _delete_text_after_caret(prompt, params):
-    prompt.context.text = prompt.caret.get_backward_text()
+    prompt.text = prompt.caret.get_backward_text()
     prompt.caret.locus = prompt.caret.tail
 
 
 def _delete_entire_text(prompt, params):
-    prompt.context.text = ''
-    prompt.caret.locus = prompt.caret.tail
+    prompt.text = ''
+    prompt.caret.locus = 0
 
 
 def _move_caret_to_left(prompt, params):
@@ -241,26 +241,30 @@ def _move_caret_to_tail(prompt, params):
 
 def _assign_previous_text(prompt, params):
     prompt.text = prompt.history.previous()
+    prompt.caret.locus = prompt.caret.tail
 
 
 def _assign_next_text(prompt, params):
     prompt.text = prompt.history.next()
+    prompt.caret.locus = prompt.caret.tail
 
 
 def _assign_previous_matched_text(prompt, params):
     prompt.text = prompt.history.previous_match()
+    prompt.caret.locus = prompt.caret.tail
 
 
 def _assign_next_matched_text(prompt, params):
     prompt.text = prompt.history.next_match()
+    prompt.caret.locus = prompt.caret.tail
 
 
 def _paste_from_register(prompt, params):
-    context = prompt.context.to_dict()
+    state = prompt.store()
     prompt.update_text('"')
     prompt.redraw_prompt()
     reg = int2char(prompt.nvim, getchar(prompt.nvim))
-    prompt.context.extend(context)
+    prompt.restore(state)
     val = prompt.nvim.call('getreg', reg)
     prompt.update_text(val)
 
@@ -271,11 +275,11 @@ def _paste_from_default_register(prompt, params):
 
 
 def _yank_to_register(prompt, params):
-    context = prompt.context.to_dict()
+    state = prompt.store()
     prompt.update_text("'")
     prompt.redraw_prompt()
     reg = int2char(prompt.nvim, getchar(prompt.nvim))
-    prompt.context.extend(context)
+    prompt.restore(state)
     prompt.nvim.call('setreg', reg, prompt.text)
 
 
@@ -284,11 +288,11 @@ def _yank_to_default_register(prompt, params):
 
 
 def _insert_special(prompt, params):
-    context = prompt.context.to_dict()
+    state = prompt.store()
     prompt.update_text('^')
     prompt.redraw_prompt()
     code = getchar(prompt.nvim)
-    prompt.context.extend(context)
+    prompt.restore(state)
     # Substitute special keys into control char
     if code == b'\x80kb':
         code = 0x08  # ^H
@@ -297,12 +301,12 @@ def _insert_special(prompt, params):
 
 
 def _insert_digraph(prompt, params):
-    context = prompt.context.to_dict()
+    state = prompt.store()
     prompt.update_text('?')
     prompt.redraw_prompt()
     digraph = Digraph()
     char = digraph.retrieve(prompt.nvim)
-    prompt.context.extend(context)
+    prompt.restore(state)
     prompt.update_text(char)
 
 

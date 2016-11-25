@@ -1,10 +1,17 @@
 """Prompt module."""
 import copy
 import re
+import weakref
+from collections import namedtuple
 from datetime import timedelta
+from .action import ACTION_PATTERN
 from .util import ESCAPE_ECHO, build_echon_expr
 
-ACTION_KEYSTROKE_PATTERN = re.compile(r'<(\w+:\w+)>')
+
+ACTION_KEYSTROKE_PATTERN = re.compile(
+    r'<(?P<action>%s)>' % ACTION_PATTERN.pattern
+)
+
 
 STATUS_PROGRESS = 0
 STATUS_ACCEPT = 1
@@ -15,81 +22,31 @@ INSERT_MODE_INSERT = 1
 INSERT_MODE_REPLACE = 2
 
 
+Condition = namedtuple('Condition', ['text', 'caret_locus'])
+
+
 class Prompt:
     """Prompt class."""
 
     prefix = ''
 
-    def __init__(self, nvim, context):
+    def __init__(self, nvim):
         """Constructor.
 
         Args:
             nvim (neovim.Nvim): A ``neovim.Nvim`` instance.
-            context (Context): A ``prompt.context.Context`` instance.
         """
         from .caret import Caret
         from .history import History
         from .keymap import DEFAULT_KEYMAP_RULES, Keymap
         from .action import DEFAULT_ACTION
+        self.text = ''
         self.nvim = nvim
         self.insert_mode = INSERT_MODE_INSERT
-        self.context = context
-        self.caret = Caret(context)
-        self.history = History(self)
+        self.caret = Caret(weakref.proxy(self))
+        self.history = History(weakref.proxy(self))
         self.action = copy.copy(DEFAULT_ACTION)
         self.keymap = Keymap.from_rules(nvim, DEFAULT_KEYMAP_RULES)
-
-    @property
-    def text(self):
-        """str: A current context text.
-
-        It automatically adjust the current caret locus to the tail of the text
-        if any text is assigned.
-
-        It calls the following overridable methods in order of the appearance.
-
-        - on_init - Only once
-        - on_update
-        - on_redraw
-        - on_keypress
-        - on_term - Only once
-
-        Example:
-            >>> from .context import Context
-            >>> from unittest.mock import MagicMock
-            >>> nvim = MagicMock()
-            >>> nvim.options = {'encoding': 'utf-8'}
-            >>> context = Context()
-            >>> context.text = "Hello"
-            >>> context.caret_locus = 3
-            >>> prompt = Prompt(nvim, context)
-            >>> prompt.text
-            'Hello'
-            >>> prompt.caret.locus
-            3
-            >>> prompt.text = "FooFooFoo"
-            >>> prompt.text
-            'FooFooFoo'
-            >>> prompt.caret.locus
-            9
-        """
-        return self.context.text
-
-    @text.setter
-    def text(self, value):
-        self.context.text = value
-        self.caret.locus = len(value)
-
-    def apply_custom_mappings_from_vim_variable(self, varname):
-        """Apply custom key mappings from Vim variable.
-
-        Args:
-            varname (str): A global Vim's variable name
-        """
-        if varname in self.nvim.vars:
-            custom_mappings = self.nvim.vars[varname]
-            for rule in custom_mappings:
-                self.keymap.register_from_rule(self.nvim, rule)
 
     def insert_text(self, text):
         """Insert text after the caret.
@@ -98,14 +55,12 @@ class Prompt:
             text (str): A text which will be inserted after the caret.
 
         Example:
-            >>> from .context import Context
             >>> from unittest.mock import MagicMock
             >>> nvim = MagicMock()
             >>> nvim.options = {'encoding': 'utf-8'}
-            >>> context = Context()
-            >>> context.text = "Hello Goodbye"
-            >>> context.caret_locus = 3
-            >>> prompt = Prompt(nvim, context)
+            >>> prompt = Prompt(nvim)
+            >>> prompt.text = "Hello Goodbye"
+            >>> prompt.caret.locus = 3
             >>> prompt.insert_text('AA')
             >>> prompt.text
             'HelAAlo Goodbye'
@@ -126,14 +81,12 @@ class Prompt:
             text (str): A text which will be replaced after the caret.
 
         Example:
-            >>> from .context import Context
             >>> from unittest.mock import MagicMock
             >>> nvim = MagicMock()
             >>> nvim.options = {'encoding': 'utf-8'}
-            >>> context = Context()
-            >>> context.text = "Hello Goodbye"
-            >>> context.caret_locus = 3
-            >>> prompt = Prompt(nvim, context)
+            >>> prompt = Prompt(nvim)
+            >>> prompt.text = "Hello Goodbye"
+            >>> prompt.caret.locus = 3
             >>> prompt.replace_text('AA')
             >>> prompt.text
             'HelAA Goodbye'
@@ -153,14 +106,12 @@ class Prompt:
             text (str): A text which will be replaced after the caret.
 
         Example:
-            >>> from .context import Context
             >>> from unittest.mock import MagicMock
             >>> nvim = MagicMock()
             >>> nvim.options = {'encoding': 'utf-8'}
-            >>> context = Context()
-            >>> context.text = "Hello Goodbye"
-            >>> context.caret_locus = 3
-            >>> prompt = Prompt(nvim, context)
+            >>> prompt = Prompt(nvim)
+            >>> prompt.text = "Hello Goodbye"
+            >>> prompt.caret.locus = 3
             >>> prompt.insert_mode = INSERT_MODE_INSERT
             >>> prompt.update_text('AA')
             >>> prompt.text
@@ -192,17 +143,13 @@ class Prompt:
             build_echon_expr(forward_text, 'None'),
         ]))
 
-    def start(self, default=None):
-        """Start prompt with ``default`` text and return value.
-
-        Args:
-            default (None or str): A default text of the prompt. If omitted, a
-                text in the context specified in the constructor is used.
+    def start(self):
+        """Start prompt and return value.
 
         Returns:
             int: The status of the prompt.
         """
-        status = self.on_init(default) or STATUS_PROGRESS
+        status = self.on_init() or STATUS_PROGRESS
         if self.nvim.options['timeout']:
             timeoutlen = timedelta(
                 milliseconds=int(self.nvim.options['timeoutlen'])
@@ -230,15 +177,10 @@ class Prompt:
             self.nvim.call('histadd', 'input', self.text)
         return self.on_term(status)
 
-    def on_init(self, default):
+    def on_init(self):
         """Initialize the prompt.
 
-        It calls 'inputsave' function in Vim and assign ``default`` text to the
-        ``self.text`` to initialize the prompt text in default.
-
-        Args:
-            default (None or str): A default text of the prompt. If omitted, a
-                text in the context specified in the constructor is used.
+        It calls 'inputsave' function in Vim in default.
 
         Returns:
             None or int: The return value will be used as a status of the
@@ -247,8 +189,6 @@ class Prompt:
                 Returning None is equal to returning STATUS_PROGRESS.
         """
         self.nvim.call('inputsave')
-        if default:
-            self.text = default
 
     def on_update(self, status):
         """Update the prompt status and return the status.
@@ -296,7 +236,7 @@ class Prompt:
         """
         m = ACTION_KEYSTROKE_PATTERN.match(str(keystroke))
         if m:
-            return self.action.call(self, m.group(1))
+            return self.action.call(self, m.group('action'))
         else:
             self.update_text(str(keystroke))
 
@@ -314,3 +254,15 @@ class Prompt:
         """
         self.nvim.call('inputrestore')
         return status
+
+    def store(self):
+        """Save current prompt condition into a Condition instance."""
+        return Condition(
+            text=self.text,
+            caret_locus=self.caret.locus,
+        )
+
+    def restore(self, condition):
+        """Load current prompt condition from a Condition instance."""
+        self.text = condition.text
+        self.caret.locus = condition.caret_locus
