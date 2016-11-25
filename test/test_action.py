@@ -14,7 +14,7 @@ def test_Action():
 
 
 def test_action_register():
-    callback = lambda prompt: None
+    callback = lambda prompt, params: None
     action = Action()
     action.register('prompt:test', callback)
     assert 'prompt:test' in action.registry
@@ -22,7 +22,7 @@ def test_action_register():
 
 
 def test_action_register_from_rules():
-    callback = lambda prompt: None
+    callback = lambda prompt, params: None
     action = Action()
     action.register_from_rules([
         ('prompt:test1', callback),
@@ -36,7 +36,7 @@ def test_action_register_from_rules():
 
 def test_action_call(prompt):
     prompt.text = 'foo'
-    callback = lambda prompt: prompt.text
+    callback = lambda prompt, params: prompt.text
     action = Action()
     action.register('prompt:test', callback)
     assert action.call(prompt, 'prompt:test') == 'foo'
@@ -44,9 +44,17 @@ def test_action_call(prompt):
     with pytest.raises(AttributeError):
         action.call(prompt, 'prompt:not_a_registered_action')
 
+def test_action_call_with_params(prompt):
+    prompt.text = 'foo'
+    callback = lambda prompt, params: prompt.text + params
+    action = Action()
+    action.register('prompt:test', callback)
+    assert action.call(prompt, 'prompt:test') == 'foo'
+    assert action.call(prompt, 'prompt:test:foo') == 'foofoo'
+    assert action.call(prompt, 'prompt:test:foo:foo') == 'foofoo:foo'
 
 def test_Action_from_rules():
-    callback = lambda prompt: None
+    callback = lambda prompt, params: None
     action = Action.from_rules([
         ('prompt:test1', callback),
         ('prompt:test2', callback),
