@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import (
     Iterator, Optional, Sequence, Tuple, Union, NamedTuple,
     Callable,
@@ -30,7 +30,7 @@ class Definition(DefinitionBase):
 class Keymap:
     registry = ...  # type: Dict[Keystroke, Definition]
 
-    def clear() -> None: ...
+    def clear(self) -> None: ...
 
     def register(self, definition: Definition) -> None: ...
 
@@ -48,7 +48,7 @@ class Keymap:
                 nowait: bool=False) -> Optional[Keystroke]: ...
 
     def harvest(self, nvim: Nvim,
-                timeoutlen: Optional[int],
+                timeoutlen: Optional[timedelta],
                 callback: Optional[Callable]) -> Keystroke: ...
 
     @classmethod
@@ -57,4 +57,5 @@ class Keymap:
 
 def _getcode(nvim: Nvim,
              timeout: Optional[datetime],
-             callback: Optional[Callable]) -> Optional[KeyCode]: ...
+             callback: Optional[Callable],
+             sleep: float) -> Optional[KeyCode]: ...

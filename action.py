@@ -1,4 +1,4 @@
-"""Action module."""
+"""Prompt action module."""
 import re
 from .digraph import Digraph
 from .util import getchar, int2char, int2repr
@@ -7,10 +7,15 @@ from .util import getchar, int2char, int2repr
 ACTION_PATTERN = re.compile(
     r'(?P<name>(?:\w+):(?P<label>\w+))(?::(?P<params>.+))?'
 )
+"""Action name pattern."""
 
 
 class Action:
-    """Action class which holds action callbacks.
+    """Action class which hold action callbacks.
+
+    Note:
+        This class defines ``__slots__`` attribute so sub-class must override
+        the attribute to extend available attributes.
 
     Attributes:
         registry (dict): An action dictionary.
@@ -32,7 +37,7 @@ class Action:
         Args:
             name (str): An action name which follow
                 {namespace}:{action name}:{params}
-            callback (Callable): An action callback which take a
+            callback (Callable[Prompt, str]): An action callback which take a
                 ``prompt.prompt.Prompt`` instance, str and return None or int.
 
         Example:
@@ -103,6 +108,7 @@ class Action:
         # fallback to the prompt's builtin action if no name found in registry
         if name not in self.registry and alternative_name in self.registry:
             name = alternative_name
+        # Execute action or raise AttributeError
         if name in self.registry:
             fn = self.registry[name]
             return fn(prompt, params)

@@ -160,9 +160,11 @@ class Prompt:
             status = self.on_update(status) or STATUS_PROGRESS
             while status is STATUS_PROGRESS:
                 self.on_redraw()
-                status = self.on_keypress(
-                    self.keymap.harvest(self.nvim, timeoutlen)
-                ) or STATUS_PROGRESS
+                status = self.on_keypress(self.keymap.harvest(
+                    self.nvim,
+                    timeoutlen=timeoutlen,
+                    callback=self.on_harvest,
+                )) or STATUS_PROGRESS
                 status = self.on_update(status) or STATUS_PROGRESS
         except KeyboardInterrupt:
             status = STATUS_CANCEL
@@ -206,7 +208,7 @@ class Prompt:
                 STATUS_PROGRESS, the prompt mainloop immediately terminated.
                 Returning None is equal to returning STATUS_PROGRESS.
         """
-        return status
+        pass
 
     def on_redraw(self):
         """Redraw the prompt.
@@ -216,13 +218,22 @@ class Prompt:
         """
         self.redraw_prompt()
 
+    def on_harvest(self):
+        """Callback which is called during a keycode harvest.
+
+        This callback is called most often. Developers should not call heavy
+        procession on this callback.
+
+        """
+        pass
+
     def on_keypress(self, keystroke):
         """Handle a pressed keystroke and return the status.
 
         It is used to handle a pressed keystroke. Note that subclass should NOT
         override this method to perform actions. Register a new custom action
         instead. In default, it call action and return the result if the
-        keystroke is <xxx:xxx>.
+        keystroke looks like <xxx:xxx>.
 
         Args:
             keystroke (Keystroke): A pressed keystroke instance. Note that this

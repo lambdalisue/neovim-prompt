@@ -19,7 +19,7 @@ class Caret:
 
         Args:
             prompt (Prompt): The ``prompt.prompt.Prompt`` instance.
-            locus (int): The caret initial locus.
+            locus (int): The caret initial locus (Default: 0).
         """
         self.prompt = prompt
         self.locus = locus
