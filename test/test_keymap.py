@@ -326,6 +326,44 @@ def test_keymap_harvest_notimeout(nvim):
         assert nvim.call() == ord('\x08')   # residual
 
 
+def test_keymap_harvest_with_callback(nvim):
+    nvim.options = {
+        'timeout': False,
+        'timeoutlen': 1000,
+        'encoding': 'utf-8',
+    }
+    timeoutlen = None
+
+    now = datetime.now()
+    with patch('prompt.keymap.datetime') as m1:
+        keymap = Keymap()
+        keymap.register_from_rules(nvim, [
+            ('<C-H>', '<prompt:CH>', 'noremap'),
+            ('<C-H><C-H>', '<prompt:CHCH>', 'noremap'),
+        ])
+
+        # Keypress after timeoutlen
+        def side_effect(*args):
+            yield ord('\x08')   # ^H
+            m1.now.return_value += timedelta(milliseconds=1000)
+            yield 0
+            yield ord('\x08')   # ^H
+
+        m1.now.return_value = now
+        nvim.call = MagicMock()
+        nvim.call.side_effect = side_effect()
+
+        callback = MagicMock()
+
+        keystroke = keymap.harvest(nvim, timeoutlen, callback)
+        assert keystroke == Keystroke.parse(nvim, '<prompt:CHCH>')
+        with pytest.raises(StopIteration):
+            nvim.call()
+
+        # Callback should be called
+        callback.assert_called_once_with()
+
+
 def test_Keymap_from_rules(nvim):
     lhs1 = Keystroke.parse(nvim, '<C-H>')
     lhs2 = Keystroke.parse(nvim, '<C-D>')
