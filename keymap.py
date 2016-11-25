@@ -65,6 +65,10 @@ class Keymap:
         """Constructor."""
         self.registry = {}
 
+    def clear(self):
+        """Clear registered keymaps."""
+        self.registry.clear()
+
     def register(self, definition):
         """Register a keymap.
 
