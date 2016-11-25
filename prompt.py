@@ -30,6 +30,12 @@ class Prompt:
 
     prefix = ''
 
+    highlight_prefix = 'Question'
+
+    highlight_text = 'None'
+
+    highlight_caret = 'IncSearch'
+
     def __init__(self, nvim):
         """Constructor.
 
@@ -137,10 +143,10 @@ class Prompt:
         forward_text = self.caret.get_forward_text()
         self.nvim.command('|'.join([
             'redraw',
-            build_echon_expr(self.prefix, 'Question'),
-            build_echon_expr(backward_text, 'None'),
-            build_echon_expr(selected_text, 'IncSearch'),
-            build_echon_expr(forward_text, 'None'),
+            build_echon_expr(self.prefix, self.highlight_prefix),
+            build_echon_expr(backward_text, self.highlight_text),
+            build_echon_expr(selected_text, self.highlight_caret),
+            build_echon_expr(forward_text, self.highlight_text),
         ]))
 
     def start(self):

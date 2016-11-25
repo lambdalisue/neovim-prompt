@@ -37,6 +37,12 @@ class Prompt:
 
     prefix = ...  # type: str
 
+    highlight_prefix = ...  # type: str
+
+    highlight_text = ...  # type: str
+
+    highlight_caret = ...  # type: str
+
     def __init__(self, nvim: Nvim) -> None: ...
 
     @property
