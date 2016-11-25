@@ -2,7 +2,7 @@ from typing import Callable, Optional, Dict, Tuple, Sequence
 from .prompt import Prompt, Status
 
 
-ActionCallback = Callable[[Prompt], Optional[int]]
+ActionCallback = Callable[[Prompt, str], Optional[int]]
 ActionRules = Sequence[Tuple[str, ActionCallback]]
 
 

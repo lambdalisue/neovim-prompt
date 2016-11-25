@@ -5,7 +5,7 @@ from .util import getchar, int2char, int2repr
 
 
 ACTION_PATTERN = re.compile(
-    r'(?P<namespace>\w+):(?P<name>\w+)(?::(?P<params>\w+))*'
+    r'^(?P<name>(?:\w+):(?P<label>\w+))(?::(?P<params>.+))?$'
 )
 
 
@@ -30,14 +30,17 @@ class Action:
         """Register action callback to a specified name.
 
         Args:
-            name (str): An action name which follow {namespace}:{action name}
+            name (str): An action name which follow
+                {namespace}:{action name}:{params}
             callback (Callable): An action callback which take a
-                ``prompt.prompt.Prompt`` instance and return None or int.
+                ``prompt.prompt.Prompt`` instance, str and return None or int.
 
         Example:
             >>> from .prompt import STATUS_ACCEPT
             >>> action = Action()
-            >>> action.register('prompt:accept', lambda prompt: STATUS_ACCEPT)
+            >>> action.register(
+            ...     'prompt:accept', lambda prompt, params: STATUS_ACCEPT
+            ... )
         """
         self.registry[name] = callback
 
@@ -52,14 +55,14 @@ class Action:
             >>> from .prompt import STATUS_ACCEPT, STATUS_CANCEL
             >>> action = Action()
             >>> action.register_from_rules([
-            ...     ('prompt:accept', lambda prompt: STATUS_ACCEPT),
-            ...     ('prompt:cancel', lambda prompt: STATUS_CANCEL),
+            ...     ('prompt:accept', lambda prompt, params: STATUS_ACCEPT),
+            ...     ('prompt:cancel', lambda prompt, params: STATUS_CANCEL),
             ... ])
         """
         for rule in rules:
             self.register(*rule)
 
-    def call(self, prompt, name):
+    def call(self, prompt, action):
         """Call a callback of specified action.
 
         Args:
@@ -72,11 +75,16 @@ class Action:
             >>> prompt = MagicMock()
             >>> action = Action()
             >>> action.register_from_rules([
-            ...     ('prompt:accept', lambda prompt: STATUS_ACCEPT),
-            ...     ('prompt:cancel', lambda prompt: STATUS_CANCEL),
+            ...     ('prompt:accept', lambda prompt, params: STATUS_ACCEPT),
+            ...     ('prompt:cancel', lambda prompt, params: STATUS_CANCEL),
+            ...     ('prompt:do', lambda prompt, params: params),
             ... ])
             >>> action.call(prompt, 'prompt:accept')
             1
+            >>> action.call(prompt, 'prompt:cancel')
+            2
+            >>> action.call(prompt, 'prompt:do:foo')
+            'foo'
             >>> action.call(prompt, 'unknown:accept')
             1
             >>> action.call(prompt, 'unknown:unknown')
@@ -87,13 +95,17 @@ class Action:
         Returns:
             None or int: None or int which represent the prompt status.
         """
-        alternative_name = re.sub(r'[^:]+:(.*)', r'prompt:\1', name)
+        m = ACTION_PATTERN.match(action)
+        name = m.group('name')
+        label = m.group('label')
+        params = m.group('params') or ''
+        alternative_name = 'prompt:' + label
+        # fallback to the prompt's builtin action if no name found in registry
         if name not in self.registry and alternative_name in self.registry:
-            # fallback to the prompt's builtin action
             name = alternative_name
         if name in self.registry:
             fn = self.registry[name]
-            return fn(prompt)
+            return fn(prompt, params)
         raise AttributeError(
             'No action "%s" has registered.' % name
         )
@@ -109,8 +121,8 @@ class Action:
         Example:
             >>> from .prompt import STATUS_ACCEPT, STATUS_CANCEL
             >>> Action.from_rules([
-            ...     ('prompt:accept', lambda prompt: STATUS_ACCEPT),
-            ...     ('prompt:cancel', lambda prompt: STATUS_CANCEL),
+            ...     ('prompt:accept', lambda prompt, params: STATUS_ACCEPT),
+            ...     ('prompt:cancel', lambda prompt, params: STATUS_CANCEL),
             ... ])
             <....action.Action object at ...>
 
@@ -123,17 +135,17 @@ class Action:
 
 
 # Default actions -------------------------------------------------------------
-def _accept(prompt):
+def _accept(prompt, params):
     from .prompt import STATUS_ACCEPT
     return STATUS_ACCEPT
 
 
-def _cancel(prompt):
+def _cancel(prompt, params):
     from .prompt import STATUS_CANCEL
     return STATUS_CANCEL
 
 
-def _toggle_insert_mode(prompt):
+def _toggle_insert_mode(prompt, params):
     from .prompt import INSERT_MODE_INSERT, INSERT_MODE_REPLACE
     if prompt.insert_mode == INSERT_MODE_INSERT:
         prompt.insert_mode = INSERT_MODE_REPLACE
@@ -141,7 +153,7 @@ def _toggle_insert_mode(prompt):
         prompt.insert_mode = INSERT_MODE_INSERT
 
 
-def _delete_char_before_caret(prompt):
+def _delete_char_before_caret(prompt, params):
     if prompt.caret.locus == 0:
         return
     prompt.context.text = ''.join([
@@ -152,7 +164,7 @@ def _delete_char_before_caret(prompt):
     prompt.caret.locus -= 1
 
 
-def _delete_word_before_caret(prompt):
+def _delete_word_before_caret(prompt, params):
     if prompt.caret.locus == 0:
         return
     # Use vim's substitute to respect 'iskeyword'
@@ -169,28 +181,28 @@ def _delete_word_before_caret(prompt):
     prompt.caret.locus -= len(original_backward_text) - len(backward_text)
 
 
-def _delete_char_under_caret(prompt):
+def _delete_char_under_caret(prompt, params):
     prompt.context.text = ''.join([
         prompt.caret.get_backward_text(),
         prompt.caret.get_forward_text(),
     ])
 
 
-def _delete_text_after_caret(prompt):
+def _delete_text_after_caret(prompt, params):
     prompt.context.text = prompt.caret.get_backward_text()
     prompt.caret.locus = prompt.caret.tail
 
 
-def _delete_entire_text(prompt):
+def _delete_entire_text(prompt, params):
     prompt.context.text = ''
     prompt.caret.locus = prompt.caret.tail
 
 
-def _move_caret_to_left(prompt):
+def _move_caret_to_left(prompt, params):
     prompt.caret.locus -= 1
 
 
-def _move_caret_to_one_word_left(prompt):
+def _move_caret_to_one_word_left(prompt, params):
     # Use vim's substitute to respect 'iskeyword'
     original_text = prompt.caret.get_backward_text()
     substituted_text = prompt.nvim.call(
@@ -201,11 +213,11 @@ def _move_caret_to_one_word_left(prompt):
     prompt.caret.locus -= 1 if not offset else offset
 
 
-def _move_caret_to_right(prompt):
+def _move_caret_to_right(prompt, params):
     prompt.caret.locus += 1
 
 
-def _move_caret_to_one_word_right(prompt):
+def _move_caret_to_one_word_right(prompt, params):
     # Use vim's substitute to respect 'iskeyword'
     original_text = prompt.caret.get_forward_text()
     substituted_text = prompt.nvim.call(
@@ -215,35 +227,35 @@ def _move_caret_to_one_word_right(prompt):
     prompt.caret.locus += 1 + len(original_text) - len(substituted_text)
 
 
-def _move_caret_to_head(prompt):
+def _move_caret_to_head(prompt, params):
     prompt.caret.locus = prompt.caret.head
 
 
-def _move_caret_to_lead(prompt):
+def _move_caret_to_lead(prompt, params):
     prompt.caret.locus = prompt.caret.lead
 
 
-def _move_caret_to_tail(prompt):
+def _move_caret_to_tail(prompt, params):
     prompt.caret.locus = prompt.caret.tail
 
 
-def _assign_previous_text(prompt):
+def _assign_previous_text(prompt, params):
     prompt.text = prompt.history.previous()
 
 
-def _assign_next_text(prompt):
+def _assign_next_text(prompt, params):
     prompt.text = prompt.history.next()
 
 
-def _assign_previous_matched_text(prompt):
+def _assign_previous_matched_text(prompt, params):
     prompt.text = prompt.history.previous_match()
 
 
-def _assign_next_matched_text(prompt):
+def _assign_next_matched_text(prompt, params):
     prompt.text = prompt.history.next_match()
 
 
-def _paste_from_register(prompt):
+def _paste_from_register(prompt, params):
     context = prompt.context.to_dict()
     prompt.update_text('"')
     prompt.redraw_prompt()
@@ -253,12 +265,12 @@ def _paste_from_register(prompt):
     prompt.update_text(val)
 
 
-def _paste_from_default_register(prompt):
+def _paste_from_default_register(prompt, params):
     val = prompt.nvim.call('getreg', prompt.nvim.vvars['register'])
     prompt.update_text(val)
 
 
-def _yank_to_register(prompt):
+def _yank_to_register(prompt, params):
     context = prompt.context.to_dict()
     prompt.update_text("'")
     prompt.redraw_prompt()
@@ -267,11 +279,11 @@ def _yank_to_register(prompt):
     prompt.nvim.call('setreg', reg, prompt.text)
 
 
-def _yank_to_default_register(prompt):
+def _yank_to_default_register(prompt, params):
     prompt.nvim.call('setreg', prompt.nvim.vvars['register'], prompt.text)
 
 
-def _insert_special(prompt):
+def _insert_special(prompt, params):
     context = prompt.context.to_dict()
     prompt.update_text('^')
     prompt.redraw_prompt()
@@ -284,7 +296,7 @@ def _insert_special(prompt):
     prompt.update_text(char)
 
 
-def _insert_digraph(prompt):
+def _insert_digraph(prompt, params):
     context = prompt.context.to_dict()
     prompt.update_text('?')
     prompt.redraw_prompt()
