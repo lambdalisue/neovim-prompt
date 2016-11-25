@@ -165,7 +165,7 @@ class Prompt:
                     timeoutlen=timeoutlen,
                     callback=self.on_harvest,
                 )) or STATUS_PROGRESS
-                status = self.on_update(status) or STATUS_PROGRESS
+                status = self.on_update(status) or status
         except KeyboardInterrupt:
             status = STATUS_CANCEL
         except Exception as e:
