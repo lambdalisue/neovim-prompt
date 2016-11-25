@@ -56,11 +56,6 @@ def test_getchar(nvim):
         util.getchar(nvim)
 
 
-def test_safeget():
-    assert util.safeget([], 10) is None
-    assert util.safeget([], 10, 'foo') == 'foo'
-
-
 def test_Singleton():
 
     class Dummy(metaclass=util.Singleton):
