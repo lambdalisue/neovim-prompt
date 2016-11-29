@@ -48,6 +48,10 @@ def test_getchar(nvim):
     nvim.call.return_value = 'a'
     assert util.getchar(nvim) == b'a'
 
+    nvim.call.return_value = 0x03
+    with pytest.raises(KeyboardInterrupt):
+        util.getchar(nvim)
+
     nvim.call.side_effect = Exception("b'Keyboard interrupt'")
     with pytest.raises(KeyboardInterrupt):
         util.getchar(nvim)

@@ -21,6 +21,22 @@ def test_action_register():
     assert action.registry['prompt:test'] == callback
 
 
+def test_action_unregister():
+    callback = lambda prompt, params: None
+    action = Action()
+    action.register('prompt:test', callback)
+    assert 'prompt:test' in action.registry
+    assert action.registry['prompt:test'] == callback
+
+    action.unregister('prompt:test')
+    assert 'prompt:test' not in action.registry
+
+    with pytest.raises(KeyError):
+        action.unregister('prompt:test')
+
+    action.unregister('prompt:test', fail_silently=True)
+
+
 def test_action_register_from_rules():
     callback = lambda prompt, params: None
     action = Action()
@@ -136,12 +152,113 @@ def test_delete_word_before_caret(prompt, action):
     assert prompt.caret.locus == 0
 
 
+def test_delete_char_after_caret(prompt, action):
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert prompt.text == 'Hello oodbye'
+    assert prompt.caret.locus == 5
+
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert prompt.text == 'Hello ye'
+    assert prompt.caret.locus == 5
+
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert action.call(prompt, 'prompt:delete_char_after_caret') is None
+    assert prompt.text == 'Hello '
+    assert prompt.caret.locus == 5
+
+
+def test_delete_word_after_caret(prompt, action):
+
+    def mock_call(fname, expr, pat, sub, flags):
+        import re
+        return re.sub('^\s*\w+', sub, expr)
+
+    prompt.nvim.call = MagicMock()
+    prompt.nvim.call.side_effect = mock_call
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'Hello '
+    assert prompt.caret.locus == 5
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 10
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'Hello Goodb'
+    assert prompt.caret.locus == 10
+
+    prompt.text = 'Hello Goodbye    '
+    prompt.caret.locus = 16
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'Hello Goodbye    '
+    assert prompt.caret.locus == 16
+
+    prompt.text = '    Hello Goodbye'
+    prompt.caret.locus = 2
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == '    Goodbye'
+    assert prompt.caret.locus == 2
+
+
 def test_delete_char_under_caret(prompt, action):
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
     assert action.call(prompt, 'prompt:delete_char_under_caret') is None
     assert prompt.text == 'HelloGoodbye'
     assert prompt.caret.locus == 5
+
+
+def test_delete_word_under_caret(prompt, action):
+
+    def mock_call(fname, expr, pat, sub, flags):
+        import re
+        return re.sub('\w+\s*$', sub, expr)
+
+    prompt.nvim.call = MagicMock()
+    prompt.nvim.call.side_effect = mock_call
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'HelloGoodbye'
+    assert prompt.caret.locus == 5
+
+    prompt.text = 'Hello   Goodbye'
+    prompt.caret.locus = 6
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'HelloGoodbye'
+    assert prompt.caret.locus == 5
+
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 10
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'Hello '
+    assert prompt.caret.locus == 6
+
+    prompt.text = 'Hello Goodbye    '
+    prompt.caret.locus = 16
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 13
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'Hello '
+    assert prompt.caret.locus == 6
+
+
+def test_delete_text_before_caret(prompt, action):
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:delete_text_before_caret') is None
+    assert prompt.text == 'Goodbye'
+    assert prompt.caret.locus == 0
 
 
 def test_delete_text_after_caret(prompt, action):
@@ -210,6 +327,23 @@ def test_move_caret_to_one_word_left(prompt, action):
     assert prompt.caret.locus == 6
 
 
+def test_move_caret_to_left_anchor(prompt, action):
+    prompt.nvim.call = MagicMock()
+    prompt.nvim.call.return_value = ord('e')
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:move_caret_to_left_anchor') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 1
+
+    prompt.nvim.call.return_value = ord('y')
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:move_caret_to_left_anchor') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 5
+
+
 def test_move_caret_to_right(prompt, action):
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
@@ -261,6 +395,23 @@ def test_move_caret_to_one_word_right(prompt, action):
     assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
     assert prompt.text == 'Hello   Goodbye'
     assert prompt.caret.locus == 15
+
+
+def test_move_caret_to_left_anchor(prompt, action):
+    prompt.nvim.call = MagicMock()
+    prompt.nvim.call.return_value = ord('y')
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:move_caret_to_right_anchor') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 11
+
+    prompt.nvim.call.return_value = ord('H')
+    prompt.text = 'Hello Goodbye'
+    prompt.caret.locus = 5
+    assert action.call(prompt, 'prompt:move_caret_to_right_anchor') is None
+    assert prompt.text == 'Hello Goodbye'
+    assert prompt.caret.locus == 5
 
 
 def test_move_caret_to_head(prompt, action):
