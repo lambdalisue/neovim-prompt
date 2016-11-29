@@ -49,6 +49,31 @@ class Action:
         """
         self.registry[name] = callback
 
+    def unregister(self, name, fail_silently=False):
+        """Unregister a specified named action when exists.
+
+        Args:
+            name (str): An action name which follow
+                {namespace}:{action name}
+            fail_silently (bool): Do not raise KeyError even the name is
+                missing in a registry
+
+        Example:
+            >>> from .prompt import STATUS_ACCEPT
+            >>> action = Action()
+            >>> action.register(
+            ...     'prompt:accept', lambda prompt, params: STATUS_ACCEPT
+            ... )
+            >>> action.unregister(
+            ...     'prompt:accept',
+            ... )
+        """
+        try:
+            del self.registry[name]
+        except KeyError as e:
+            if not fail_silently:
+                raise e
+
     def register_from_rules(self, rules) -> None:
         """Register action callbacks from rules.
 
