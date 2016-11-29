@@ -3,7 +3,7 @@ import pytest
 from prompt.keystroke import Keystroke
 from prompt.prompt import (
     Prompt,
-    STATUS_ACCEPT, STATUS_CANCEL, STATUS_ERROR,
+    STATUS_ACCEPT, STATUS_CANCEL, STATUS_INTERRUPT,
 )
 
 
@@ -131,10 +131,11 @@ def test_start_exception(prompt):
     }
     prompt.keymap = MagicMock()
     prompt.keymap.harvest.side_effect = KeyboardInterrupt
-    assert prompt.start() is STATUS_CANCEL
+    assert prompt.start() is STATUS_INTERRUPT
 
     prompt.keymap.harvest.side_effect = Exception
-    assert prompt.start() is STATUS_ERROR
+    with pytest.raises(Exception):
+        prompt.start()
 
 
 def test_on_init(prompt):
