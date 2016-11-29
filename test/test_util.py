@@ -49,7 +49,8 @@ def test_getchar(nvim):
     assert util.getchar(nvim) == b'a'
 
     nvim.call.side_effect = Exception("b'Keyboard interrupt'")
-    assert util.getchar(nvim) == 0x03
+    with pytest.raises(KeyboardInterrupt):
+        util.getchar(nvim)
 
     nvim.call.side_effect = Exception
     with pytest.raises(Exception):
