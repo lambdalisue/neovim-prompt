@@ -200,9 +200,11 @@ def _delete_word_before_caret(prompt, params):
     if prompt.caret.locus == 0:
         return
     pattern_set = build_keyword_pattern_set(prompt.nvim)
-    pattern = re.compile(r'(?:%s+|%s+)\s*$' % pattern_set)
+    pattern = re.compile(
+        r'(?:|%s+|%s+|[^\s\x20-\xff]+)\s*$' % pattern_set,
+    )
     original_backward_text = prompt.caret.get_backward_text()
-    backward_text = pattern.sub('', original_backward_text, count=1)
+    backward_text = pattern.sub('', original_backward_text)
     prompt.text = ''.join([
         backward_text,
         prompt.caret.get_selected_text(),
@@ -226,8 +228,10 @@ def _delete_word_after_caret(prompt, params):
     if prompt.caret.locus == prompt.caret.tail:
         return
     pattern_set = build_keyword_pattern_set(prompt.nvim)
-    pattern = re.compile(r'^(?:%s+|%s+|)\s*' % pattern_set)
-    forward_text = pattern.sub('', prompt.caret.get_forward_text(), count=1)
+    pattern = re.compile(
+        r'^(?:%s+|%s+|[^\s\x20-\xff]+|)\s*' % pattern_set
+    )
+    forward_text = pattern.sub('', prompt.caret.get_forward_text())
     prompt.text = ''.join([
         prompt.caret.get_backward_text(),
         prompt.caret.get_selected_text(),
@@ -249,6 +253,7 @@ def _delete_word_under_caret(prompt, params):
     pattern_set = build_keyword_pattern_set(prompt.nvim)
     pattern = re.compile(pattern_set.pattern)
     inverse = re.compile(pattern_set.inverse)
+    non_ascii = re.compile(r'[^\s\x20-\xff]')
     selected_text = prompt.caret.get_selected_text()
     if selected_text == '':
         # The caret is at the end of the text
@@ -260,6 +265,9 @@ def _delete_word_under_caret(prompt, params):
     elif inverse.match(selected_text):
         pattern_b = re.compile(r'%s+$' % pattern_set.inverse)
         pattern_a = re.compile(r'^%s+' % pattern_set.inverse)
+    elif non_ascii.match(selected_text):
+        pattern_b = re.compile(r'[^\s\x20-\xff]+$')
+        pattern_a = re.compile(r'^[^\s\x20-\xff]+')
     else:
         pattern_b = re.compile(r'\s+$')
         pattern_a = re.compile(r'^\s+')

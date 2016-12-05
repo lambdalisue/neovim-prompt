@@ -222,18 +222,12 @@ def build_keyword_pattern_set(nvim):
         ))
         keyword_set = source - non_keyword_set
         # Convert frozenset to str and remove whitespaces
-        if len(keyword_set) < len(non_keyword_set):
-            keyword = re.sub(r'\s+', '', ''.join(keyword_set))
-            _cached_keyword_pattern_set[iskeyword] = PatternSet(
-                pattern=r'[%s]' % re.escape(keyword),
-                inverse=r'[^ %s]' % re.escape(keyword),
-            )
-        else:
-            non_keyword = re.sub(r'\s+', '', ''.join(non_keyword_set))
-            _cached_keyword_pattern_set[iskeyword] = PatternSet(
-                pattern=r'[^ %s]' % re.escape(non_keyword),
-                inverse=r'[%s]' % re.escape(non_keyword),
-            )
+        keyword = re.sub(r'\s+', '', ''.join(keyword_set))
+        non_keyword = re.sub(r'\s+', '', ''.join(non_keyword_set))
+        _cached_keyword_pattern_set[iskeyword] = PatternSet(
+            pattern=r'[%s]' % re.escape(keyword),
+            inverse=r'[%s]' % re.escape(non_keyword),
+        )
     return _cached_keyword_pattern_set[iskeyword]
 
 
