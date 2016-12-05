@@ -262,6 +262,20 @@ def test_delete_word_under_caret(prompt, action):
     assert prompt.text == 'is a warning message!   '
     assert prompt.caret.locus == 0
 
+    # Edge case
+    prompt.text = 'ABCDE'
+    prompt.caret.locus = 5
+    assert prompt.text == 'ABCDE'
+    assert prompt.caret.locus == 5
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'ABCD'
+    assert prompt.caret.locus == 4
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'ABC'
+    assert prompt.caret.locus == 3
+
 
 def test_delete_text_before_caret(prompt, action):
     prompt.text = 'Hello Goodbye'
