@@ -1,4 +1,6 @@
+import re
 from unittest.mock import MagicMock, patch
+from neovim import attach
 import pytest
 import prompt.util as util
 
@@ -59,6 +61,60 @@ def test_getchar(nvim):
     nvim.call.side_effect = Exception
     with pytest.raises(Exception):
         util.getchar(nvim)
+
+
+def test_build_keyword_pattern_set():
+    nvim = attach('child', argv=["nvim", "--embed"])
+
+    nvim.current.buffer.options['iskeyword'] = 'A-Z,^C-Z,#,@-@,^'
+    pattern_set = util.build_keyword_pattern_set(nvim)
+    pattern = re.compile(pattern_set.pattern)
+    inverse = re.compile(pattern_set.inverse)
+    assert pattern_set is util.build_keyword_pattern_set(nvim)
+    assert pattern.match('A')
+    assert pattern.match('B')
+    assert not pattern.match('C')
+    assert not pattern.match('D')
+    assert pattern.match('#')
+    assert pattern.match('@')
+    assert pattern.match('^')
+    assert not pattern.match('!')
+    assert not pattern.match('-')
+
+    assert not inverse.match('A')
+    assert not inverse.match('B')
+    assert inverse.match('C')
+    assert inverse.match('D')
+    assert not inverse.match('#')
+    assert not inverse.match('@')
+    assert not inverse.match('^')
+    assert inverse.match('!')
+    assert inverse.match('-')
+
+    nvim.current.buffer.options['iskeyword'] = '1-255,^A-C,^^,^!'
+    pattern_set = util.build_keyword_pattern_set(nvim)
+    pattern = re.compile(pattern_set.pattern)
+    inverse = re.compile(pattern_set.inverse)
+    assert pattern_set is util.build_keyword_pattern_set(nvim)
+    assert not pattern.match('A')
+    assert not pattern.match('B')
+    assert not pattern.match('C')
+    assert pattern.match('D')
+    assert pattern.match('#')
+    assert pattern.match('@')
+    assert not pattern.match('^')
+    assert not pattern.match('!')
+    assert pattern.match('-')
+
+    assert inverse.match('A')
+    assert inverse.match('B')
+    assert inverse.match('C')
+    assert not inverse.match('D')
+    assert not inverse.match('#')
+    assert not inverse.match('@')
+    assert inverse.match('^')
+    assert inverse.match('!')
+    assert not inverse.match('-')
 
 
 def test_Singleton():
