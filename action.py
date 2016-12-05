@@ -290,12 +290,13 @@ def _move_caret_to_left(prompt, params):
 
 
 def _move_caret_to_one_word_left(prompt, params):
-    # Use vim's substitute to respect 'iskeyword'
+    # NOTE:
+    # At least Neovim 0.2.0 or Vim 8.0, <S-Left> in command line does not
+    # respect 'iskeyword' and a definition of the 'word' seems a chunk of
+    # printable characters.
+    pattern = re.compile('\S+\s?$')
     original_text = prompt.caret.get_backward_text()
-    substituted_text = prompt.nvim.call(
-        'substitute',
-        original_text, '\k\+\s\?$', '', '',
-    )
+    substituted_text = pattern.sub('', original_text)
     offset = len(original_text) - len(substituted_text)
     prompt.caret.locus -= 1 if not offset else offset
 
@@ -313,12 +314,13 @@ def _move_caret_to_right(prompt, params):
 
 
 def _move_caret_to_one_word_right(prompt, params):
-    # Use vim's substitute to respect 'iskeyword'
+    # NOTE:
+    # At least Neovim 0.2.0 or Vim 8.0, <S-Left> in command line does not
+    # respect 'iskeyword' and a definition of the 'word' seems a chunk of
+    # printable characters.
+    pattern = re.compile('^\S+')
     original_text = prompt.caret.get_forward_text()
-    substituted_text = prompt.nvim.call(
-        'substitute',
-        original_text, '^\k\+', '', '',
-    )
+    substituted_text = pattern.sub('', original_text)
     prompt.caret.locus += 1 + len(original_text) - len(substituted_text)
 
 
