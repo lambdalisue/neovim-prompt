@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+from neovim import attach
 import pytest
 
 from prompt.action import Action, DEFAULT_ACTION
@@ -122,13 +123,7 @@ def test_delete_char_before_caret(prompt, action):
 
 
 def test_delete_word_before_caret(prompt, action):
-
-    def mock_call(fname, expr, pat, sub, flags):
-        import re
-        return re.sub('\w+\s*$', sub, expr)
-
-    prompt.nvim.call = MagicMock()
-    prompt.nvim.call.side_effect = mock_call
+    prompt.nvim = attach('child', argv=["nvim", "--embed"])
 
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
@@ -175,13 +170,7 @@ def test_delete_char_after_caret(prompt, action):
 
 
 def test_delete_word_after_caret(prompt, action):
-
-    def mock_call(fname, expr, pat, sub, flags):
-        import re
-        return re.sub('^\s*\w+', sub, expr)
-
-    prompt.nvim.call = MagicMock()
-    prompt.nvim.call.side_effect = mock_call
+    prompt.nvim = attach('child', argv=["nvim", "--embed"])
 
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
@@ -217,13 +206,7 @@ def test_delete_char_under_caret(prompt, action):
 
 
 def test_delete_word_under_caret(prompt, action):
-
-    def mock_call(fname, expr, pat, sub, flags):
-        import re
-        return re.sub('\w+\s*$', sub, expr)
-
-    prompt.nvim.call = MagicMock()
-    prompt.nvim.call.side_effect = mock_call
+    prompt.nvim = attach('child', argv=["nvim", "--embed"])
 
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
@@ -294,13 +277,7 @@ def test_move_caret_to_left(prompt, action):
 
 
 def test_move_caret_to_one_word_left(prompt, action):
-
-    def mock_call(fname, expr, pat, sub, flags):
-        import re
-        return re.sub('\w+\s?$', sub, expr)
-
-    prompt.nvim.call = MagicMock()
-    prompt.nvim.call.side_effect = mock_call
+    prompt.nvim = attach('child', argv=["nvim", "--embed"])
 
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
@@ -364,13 +341,7 @@ def test_move_caret_to_right(prompt, action):
 
 
 def test_move_caret_to_one_word_right(prompt, action):
-
-    def mock_call(fname, expr, pat, sub, flags):
-        import re
-        return re.sub('^\w+', sub, expr)
-
-    prompt.nvim.call = MagicMock()
-    prompt.nvim.call.side_effect = mock_call
+    prompt.nvim = attach('child', argv=["nvim", "--embed"])
 
     prompt.text = 'Hello Goodbye'
     prompt.caret.locus = 5
