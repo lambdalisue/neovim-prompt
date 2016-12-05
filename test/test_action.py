@@ -123,28 +123,32 @@ def test_delete_char_before_caret(prompt, action):
 
 
 def test_delete_word_before_caret(prompt, action):
+    # NOTE: Respect 'b' in Normal mode
     prompt.nvim = attach('child', argv=["nvim", "--embed"])
-
-    prompt.text = 'Hello Goodbye'
-    prompt.caret.locus = 5
+    prompt.nvim.current.buffer.options['iskeyword'] = '@,48-57,_,192-255'
+    # 0         1         2         3
+    # 01234567890123456789012345678901
+    # I don't know if I have a pen!---
+    #                                ^
+    prompt.text = 'I don\'t know if I have a pen!   '
+    prompt.caret.locus = 32
+    assert prompt.text == 'I don\'t know if I have a pen!   '
+    assert prompt.caret.locus == 32
     assert action.call(prompt, 'prompt:delete_word_before_caret') is None
-    assert prompt.text == ' Goodbye'
-    assert prompt.caret.locus == 0
-
-    prompt.text = 'Hello Goodbye'
-    prompt.caret.locus = 10
+    assert prompt.text == 'I don\'t know if I have a pen'
+    assert prompt.caret.locus == 28
     assert action.call(prompt, 'prompt:delete_word_before_caret') is None
-    assert prompt.text == 'Hello bye'
-    assert prompt.caret.locus == 6
-
-    prompt.text = 'Hello Goodbye    '
-    prompt.caret.locus = 16
+    assert prompt.text == 'I don\'t know if I have a '
+    assert prompt.caret.locus == 25
     assert action.call(prompt, 'prompt:delete_word_before_caret') is None
-    assert prompt.text == 'Hello  '
-    assert prompt.caret.locus == 6
+    assert prompt.text == 'I don\'t know if I have '
+    assert prompt.caret.locus == 23
     assert action.call(prompt, 'prompt:delete_word_before_caret') is None
-    assert prompt.text == ' '
-    assert prompt.caret.locus == 0
+    assert prompt.text == 'I don\'t know if I '
+    assert prompt.caret.locus == 18
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'I don\'t know if '
+    assert prompt.caret.locus == 16
 
 
 def test_delete_char_after_caret(prompt, action):
@@ -170,31 +174,51 @@ def test_delete_char_after_caret(prompt, action):
 
 
 def test_delete_word_after_caret(prompt, action):
+    # NOTE: Respect 'w' in Normal mode
     prompt.nvim = attach('child', argv=["nvim", "--embed"])
+    prompt.nvim.current.buffer.options['iskeyword'] = '@,48-57,_,192-255'
+    # 0         1         2         3         4
+    # 01234567890123456789012345678901234567890123
+    # ---!!!WARN!!!  This is a warning message!---
+    # ^
+    prompt.text = '   !!!WARN!!!  This is a warning message!   '
+    prompt.caret.locus = 0
+    assert prompt.text == '   !!!WARN!!!  This is a warning message!   '
+    assert prompt.caret.locus == 0
 
-    prompt.text = 'Hello Goodbye'
-    prompt.caret.locus = 5
     assert action.call(prompt, 'prompt:delete_word_after_caret') is None
-    assert prompt.text == 'Hello '
-    assert prompt.caret.locus == 5
+    assert prompt.text == ' !!!WARN!!!  This is a warning message!   '
+    assert prompt.caret.locus == 0
 
-    prompt.text = 'Hello Goodbye'
-    prompt.caret.locus = 10
     assert action.call(prompt, 'prompt:delete_word_after_caret') is None
-    assert prompt.text == 'Hello Goodb'
-    assert prompt.caret.locus == 10
+    assert prompt.text == ' WARN!!!  This is a warning message!   '
+    assert prompt.caret.locus == 0
 
-    prompt.text = 'Hello Goodbye    '
-    prompt.caret.locus = 16
     assert action.call(prompt, 'prompt:delete_word_after_caret') is None
-    assert prompt.text == 'Hello Goodbye    '
-    assert prompt.caret.locus == 16
+    assert prompt.text == ' !!!  This is a warning message!   '
+    assert prompt.caret.locus == 0
 
-    prompt.text = '    Hello Goodbye'
-    prompt.caret.locus = 2
     assert action.call(prompt, 'prompt:delete_word_after_caret') is None
-    assert prompt.text == '    Goodbye'
-    assert prompt.caret.locus == 2
+    assert prompt.text == ' This is a warning message!   '
+    assert prompt.caret.locus == 0
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == ' is a warning message!   '
+    assert prompt.caret.locus == 0
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == ' a warning message!   '
+    assert prompt.caret.locus == 0
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == ' warning message!   '
+    assert prompt.caret.locus == 0
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == ' message!   '
+    assert prompt.caret.locus == 0
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == ' !   '
+    assert prompt.caret.locus == 0
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == ' '
+    assert prompt.caret.locus == 0
 
 
 def test_delete_char_under_caret(prompt, action):
@@ -206,34 +230,37 @@ def test_delete_char_under_caret(prompt, action):
 
 
 def test_delete_word_under_caret(prompt, action):
+    # NOTE: Respect 'diw' in Normal mode
     prompt.nvim = attach('child', argv=["nvim", "--embed"])
+    prompt.nvim.current.buffer.options['iskeyword'] = '@,48-57,_,192-255'
+    # 0         1         2         3         4
+    # 01234567890123456789012345678901234567890123
+    # ---!!!WARN!!!  This is a warning message!---
+    #        ^
+    prompt.text = '   !!!WARN!!!  This is a warning message!   '
+    prompt.caret.locus = 7
+    assert prompt.text == '   !!!WARN!!!  This is a warning message!   '
+    assert prompt.caret.locus == 7
 
-    prompt.text = 'Hello Goodbye'
-    prompt.caret.locus = 5
     assert action.call(prompt, 'prompt:delete_word_under_caret') is None
-    assert prompt.text == 'HelloGoodbye'
-    assert prompt.caret.locus == 5
-
-    prompt.text = 'Hello   Goodbye'
-    prompt.caret.locus = 6
-    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
-    assert prompt.text == 'HelloGoodbye'
-    assert prompt.caret.locus == 5
-
-    prompt.text = 'Hello Goodbye'
-    prompt.caret.locus = 10
-    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
-    assert prompt.text == 'Hello '
+    assert prompt.text == '   !!!!!!  This is a warning message!   '
     assert prompt.caret.locus == 6
 
-    prompt.text = 'Hello Goodbye    '
-    prompt.caret.locus = 16
     assert action.call(prompt, 'prompt:delete_word_under_caret') is None
-    assert prompt.text == 'Hello Goodbye'
-    assert prompt.caret.locus == 13
+    assert prompt.text == '     This is a warning message!   '
+    assert prompt.caret.locus == 3
+
     assert action.call(prompt, 'prompt:delete_word_under_caret') is None
-    assert prompt.text == 'Hello '
-    assert prompt.caret.locus == 6
+    assert prompt.text == 'This is a warning message!   '
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == ' is a warning message!   '
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'is a warning message!   '
+    assert prompt.caret.locus == 0
 
 
 def test_delete_text_before_caret(prompt, action):
@@ -303,6 +330,19 @@ def test_move_caret_to_one_word_left(prompt, action):
     assert prompt.text == 'Hello Goodbye    '
     assert prompt.caret.locus == 6
 
+    # NOTE:
+    # At least Neovim 0.2.0 or Vim 8.0, <S-Left> in command line does not
+    # respect 'iskeyword' and a definition of the 'word' seems a chunk of
+    # printable characters.
+    prompt.text = 'Hel!! Good!!!'
+    prompt.caret.locus = 9
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_left') is None
+    assert prompt.text == 'Hel!! Good!!!'
+    assert prompt.caret.locus == 6
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_left') is None
+    assert prompt.text == 'Hel!! Good!!!'
+    assert prompt.caret.locus == 0
+
 
 def test_move_caret_to_left_anchor(prompt, action):
     prompt.nvim.call = MagicMock()
@@ -366,6 +406,19 @@ def test_move_caret_to_one_word_right(prompt, action):
     assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
     assert prompt.text == 'Hello   Goodbye'
     assert prompt.caret.locus == 15
+
+    # NOTE:
+    # At least Neovim 0.2.0 or Vim 8.0, <S-Left> in command line does not
+    # respect 'iskeyword' and a definition of the 'word' seems a chunk of
+    # printable characters.
+    prompt.text = 'Hel!! Good!!!'
+    prompt.caret.locus = 2
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
+    assert prompt.text == 'Hel!! Good!!!'
+    assert prompt.caret.locus == 5
+    assert action.call(prompt, 'prompt:move_caret_to_one_word_right') is None
+    assert prompt.text == 'Hel!! Good!!!'
+    assert prompt.caret.locus == 13
 
 
 def test_move_caret_to_left_anchor(prompt, action):
