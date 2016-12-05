@@ -250,7 +250,11 @@ def _delete_word_under_caret(prompt, params):
     pattern = re.compile(pattern_set.pattern)
     inverse = re.compile(pattern_set.inverse)
     selected_text = prompt.caret.get_selected_text()
-    if pattern.match(selected_text):
+    if selected_text == '':
+        # The caret is at the end of the text
+        pattern_b = re.compile(r'.$')
+        pattern_a = re.compile('')
+    elif pattern.match(selected_text):
         pattern_b = re.compile(r'%s+$' % pattern_set.pattern)
         pattern_a = re.compile(r'^%s+' % pattern_set.pattern)
     elif inverse.match(selected_text):
