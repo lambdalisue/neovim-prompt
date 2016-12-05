@@ -150,6 +150,44 @@ def test_delete_word_before_caret(prompt, action):
     assert prompt.text == 'I don\'t know if '
     assert prompt.caret.locus == 16
 
+    # Multi-byte characters
+    prompt.text = 'あいうaiu aiuあいう あいう!!! !!!あいう'
+    prompt.caret.locus = 27
+    assert prompt.text == 'あいうaiu aiuあいう あいう!!! !!!あいう'
+    assert prompt.caret.locus == 27
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'あいうaiu aiuあいう あいう!!! !!!'
+    assert prompt.caret.locus == 24
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'あいうaiu aiuあいう あいう!!! '
+    assert prompt.caret.locus == 21
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'あいうaiu aiuあいう あいう'
+    assert prompt.caret.locus == 17
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'あいうaiu aiuあいう '
+    assert prompt.caret.locus == 14
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'あいうaiu aiu'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'あいうaiu '
+    assert prompt.caret.locus == 7
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == 'あいう'
+    assert prompt.caret.locus == 3
+
+    assert action.call(prompt, 'prompt:delete_word_before_caret') is None
+    assert prompt.text == ''
+    assert prompt.caret.locus == 0
+
 
 def test_delete_char_after_caret(prompt, action):
     prompt.text = 'Hello Goodbye'
@@ -220,6 +258,44 @@ def test_delete_word_after_caret(prompt, action):
     assert prompt.text == ' '
     assert prompt.caret.locus == 0
 
+    # Multi-byte characters
+    prompt.text = 'あいうaiu aiuあいう あいう!!! !!!あいう'
+    prompt.caret.locus = 0
+    assert prompt.text == 'あいうaiu aiuあいう あいう!!! !!!あいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'あaiu aiuあいう あいう!!! !!!あいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'あaiuあいう あいう!!! !!!あいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'ああいう あいう!!! !!!あいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'ああいう!!! !!!あいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'あ!!! !!!あいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'あ!!!あいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'ああいう'
+    assert prompt.caret.locus == 0
+
+    assert action.call(prompt, 'prompt:delete_word_after_caret') is None
+    assert prompt.text == 'あ'
+    assert prompt.caret.locus == 0
+
 
 def test_delete_char_under_caret(prompt, action):
     prompt.text = 'Hello Goodbye'
@@ -275,6 +351,44 @@ def test_delete_word_under_caret(prompt, action):
     assert action.call(prompt, 'prompt:delete_word_under_caret') is None
     assert prompt.text == 'ABC'
     assert prompt.caret.locus == 3
+
+    # Multi-byte characters
+    prompt.text = 'あいうaiu aiuあいう あいう!!! !!!あいう'
+    prompt.caret.locus = 11
+    assert prompt.text == 'あいうaiu aiuあいう あいう!!! !!!あいう'
+    assert prompt.caret.locus == 11
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu aiu あいう!!! !!!あいう'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu aiuあいう!!! !!!あいう'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu aiu!!! !!!あいう'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu aiu !!!あいう'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu aiu!!!あいう'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu aiuあいう'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu aiu'
+    assert prompt.caret.locus == 10
+
+    assert action.call(prompt, 'prompt:delete_word_under_caret') is None
+    assert prompt.text == 'あいうaiu ai'
+    assert prompt.caret.locus == 9
 
 
 def test_delete_text_before_caret(prompt, action):
