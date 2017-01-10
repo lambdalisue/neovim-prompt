@@ -76,6 +76,12 @@ def test_Key_parse_with_bytes_special_key_ctrl(nvim):
     assert Key.parse(nvim, expr).char == '\x08'
 
     # NOTE:
+    # Vim use '\x80\xffX' internally for '<C-@>'
+    expr = b'<C-@>'
+    assert Key.parse(nvim, expr).code == b'\x80\xffX'
+    assert Key.parse(nvim, expr).char == ''
+
+    # NOTE:
     # https://github.com/vim/vim/blob/d58b0f982ad758c59abe47627216a15497e9c3c1/src/gui_w32.c#L1956-L1989
     # When user type '2', '6', or '-' with 'Ctrl' key, Vim assume they type
     # '^@', '^^', or '^_' instead. However, Vim reports "\x90\xfc\x046" for
@@ -98,6 +104,18 @@ def test_Key_parse_with_bytes_special_key_ctrl(nvim):
 
     expr = b'<C-INS>'
     assert Key.parse(nvim, expr).code == b'\x80\xfc\x04\x80kI'
+    assert Key.parse(nvim, expr).char == ''
+
+    expr = b'<C-SPACE>'
+    assert Key.parse(nvim, expr).code == b'\x80\xfc '
+    assert Key.parse(nvim, expr).char == ''
+
+    expr = b'<C-S-SPACE>'
+    assert Key.parse(nvim, expr).code == b'\x80\xfc '
+    assert Key.parse(nvim, expr).char == ''
+
+    expr = b'<S-C-SPACE>'
+    assert Key.parse(nvim, expr).code == b'\x80\xfc '
     assert Key.parse(nvim, expr).char == ''
 
 
@@ -132,6 +150,10 @@ def test_Key_parse_with_bytes_special_key_meta(nvim):
 
     expr = b'<A-INS>'
     assert Key.parse(nvim, expr).code == b'\x80\xfc\x08\x80kI'
+    assert Key.parse(nvim, expr).char == ''
+
+    expr = b'<A-SPACE>'
+    assert Key.parse(nvim, expr).code == b'\x80\xfc\x08 '
     assert Key.parse(nvim, expr).char == ''
 
 

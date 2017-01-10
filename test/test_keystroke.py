@@ -55,6 +55,14 @@ def test_Keystroke_parse_with_bytes(nvim):
     keys = Keystroke.parse(nvim, b'\x80kb\x80kI\r')
     assert keys == tuple(expr)
 
+    expr = [
+        Key.parse(nvim, '<C-@>'),
+        Key.parse(nvim, '<C-Space>'),
+        Key.parse(nvim, '<C-S-Space>'),
+    ]
+    keys = Keystroke.parse(nvim, b'\x80\xffX\x80\xfc\x04 \x80\xfc\x06 ')
+    assert keys == tuple(expr)
+
 
 def test_Keystroke_parse_with_str(nvim):
     expr = [
