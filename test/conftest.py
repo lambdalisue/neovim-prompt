@@ -10,6 +10,7 @@ sys.path.insert(0, BASE_DIR)
 @pytest.fixture
 def nvim():
     nvim = MagicMock(spec='neovim.Nvim')
+    nvim.call = MagicMock(return_value=0)
     nvim.options = {
         'encoding': 'utf-8',
     }
