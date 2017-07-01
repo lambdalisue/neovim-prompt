@@ -271,11 +271,14 @@ class Prompt:
                 STATUS_PROGRESS, the prompt mainloop immediately terminated.
                 Returning None is equal to returning STATUS_PROGRESS.
         """
-        m = ACTION_KEYSTROKE_PATTERN.match(str(keystroke))
-        if m:
-            return self.action.call(self, m.group('action'))
-        else:
-            self.update_text(str(keystroke))
+        for key in keystroke:
+            m = ACTION_KEYSTROKE_PATTERN.match(str(key))
+            if m:
+                status = self.action.call(self, m.group('action'))
+                if status:
+                    return status
+            else:
+                self.update_text(str(key))
 
     def on_term(self, status):
         """Finalize the prompt.
