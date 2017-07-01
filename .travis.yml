@@ -4,6 +4,7 @@ python:
   - 3.3
   - 3.4
   - 3.5
+  - 3.6
 #os:
 #  - linux
 #  - osx
@@ -23,9 +24,8 @@ addons:
 
 install:
   - curl -sL git.io/v18DU | bash
-  - pip install neovim
-  - pip install coveralls
   - git clone --depth 1 --single-branch -b ci-test https://github.com/lambdalisue/neovim-prompt ci-test
+  - pip install coveralls
 
 script:
   - cd ci-test
