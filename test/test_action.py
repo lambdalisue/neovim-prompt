@@ -549,7 +549,7 @@ def test_move_caret_to_one_word_right(prompt, action):
     assert prompt.caret.locus == 13
 
 
-def test_move_caret_to_left_anchor(prompt, action):
+def test_move_caret_to_right_anchor(prompt, action):
     prompt.nvim.call = MagicMock()
     prompt.nvim.call.return_value = ord('y')
     prompt.text = 'Hello Goodbye'
