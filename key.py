@@ -219,11 +219,11 @@ def _resolve_from_special_keys(nvim, inner):
             _resolve_from_special_keys_inner(nvim, inner[2:]),
         ])
     elif inner_upper == b'LEADER':
-        leader = nvim.vars['mapleader']
+        leader = nvim.vars.get('mapleader', '\\')
         leader = ensure_bytes(nvim, leader)
         return _resolve(nvim, leader)
     elif inner_upper == b'LOCALLEADER':
-        leader = nvim.vars['maplocalleader']
+        leader = nvim.vars.get('maplocalleader', '\\')
         leader = ensure_bytes(nvim, leader)
         return _resolve(nvim, leader)
     return inner
